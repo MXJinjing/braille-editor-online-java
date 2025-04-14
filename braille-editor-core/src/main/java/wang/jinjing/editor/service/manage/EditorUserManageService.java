@@ -1,5 +1,7 @@
 package wang.jinjing.editor.service.manage;
 
+import jakarta.validation.Valid;
+
 public interface EditorUserManageService{
 
     int setAccountNonExpired(Long userId, boolean accountNonExpired);
@@ -14,4 +16,5 @@ public interface EditorUserManageService{
 
     int changePasswordNotCheck(Long userId, String newPassword);
 
+    int initBucket(@Valid Long id);
 }

@@ -13,7 +13,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import wang.jinjing.editor.util.JwtAuthenticationFilter;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
@@ -43,6 +49,8 @@ public class WebSecurityConfig {
                 // 禁用 CSRF（适用于无状态 API）
                 .csrf(AbstractHttpConfigurer::disable)
 
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // 配置会话管理为无状态
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(STATELESS)
@@ -68,7 +76,8 @@ public class WebSecurityConfig {
                 // 添加JWT验证，替代用户密码验证
                 .addFilterBefore(jwtAuthenticationFilter,UsernamePasswordAuthenticationFilter.class)
 
-        ;        return http.build();
+        ;
+        return http.build();
     }
 
     @Bean
@@ -81,4 +90,18 @@ public class WebSecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:8080","http://127.0.0.1:8080","http://localhost:9090","http://127.0.0.1:9090")); // 允许前端地址
+        configuration.setAllowedMethods(List.of("*")); // 允许的HTTP方法
+        configuration.setAllowedHeaders(List.of("*")); // 允许所有请求头
+        configuration.setAllowCredentials(true); // 允许携带凭证（与前端withCredentials: true配合）
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // 对所有路径生效
+        return source;
+    }
+
 }

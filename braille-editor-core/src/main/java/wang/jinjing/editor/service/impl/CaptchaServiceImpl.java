@@ -70,7 +70,7 @@ public class CaptchaServiceImpl implements CaptchaService {
         Date createTime = new Date();
 
         return new CaptchaResultVO(
-                Base64Encoder.encode(bytes),
+                "data:image/gif;base64," + Base64Encoder.encode(bytes),
                 string,
                 createTime,
                 expireTime

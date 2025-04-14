@@ -63,7 +63,8 @@ public abstract class AbstractCRUDService<
     @Override
     public Page<VO> searchPage(T t, Map<String,Object> args,  int page, int size, Sort sort) {
         Page<T> tPage = repository.searchPage(t, new Page<T>(page, size), args, sort);
-        return BeanConvertUtil.convertToVoPage(voClass, tPage);
+        Page<VO> voPage = BeanConvertUtil.convertToVoPage(voClass, tPage);
+        return voPage;
     }
 
     @Override

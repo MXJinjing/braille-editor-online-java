@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import wang.jinjing.common.util.BeanConvertUtil;
 import wang.jinjing.editor.pojo.DTO.LoginRequestDTO;
+import wang.jinjing.editor.pojo.VO.EditorUserSimpleVO;
 import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.VO.LoginResponseVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
@@ -62,5 +63,25 @@ public class AuthController {
         }else {
             return ResponseEntity.ok(principal1);
         }
+    }
+
+    @GetMapping("/info/simple")
+    public ResponseEntity<?> getCurrentUserInfoSimple() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Object principal1 = authentication.getPrincipal();
+        if (principal1 instanceof EditorUser editorUser) {
+            return ResponseEntity.ok(BeanConvertUtil.convertToVo(EditorUserSimpleVO.class,editorUser));
+        }else {
+            return ResponseEntity.ok(principal1);
+        }
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<?> checkLogin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body("Unauthorized");
+        }
+        return ResponseEntity.ok("Authorized");
     }
 }

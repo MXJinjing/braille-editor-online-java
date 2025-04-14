@@ -57,8 +57,8 @@ public class EditorUserRepositoryImpl extends AbstractBaseRepositoryImpl<EditorU
         // 基础条件：非空字段自动匹配
         if (args.isEmpty()) {
             QueryWrapper<EditorUser> queryWrapper = new QueryWrapper<>();
-            queryWrapper.setEntity(editorUser);
-            return mapper.selectPage(page, queryWrapper);
+            Page<EditorUser> editorUserPage = mapper.selectPage(page, queryWrapper);
+            return editorUserPage;
         }
 
         return mapper.selectPage(page, buildQueryWrapper(editorUser, args, sort));

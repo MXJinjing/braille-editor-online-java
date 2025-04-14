@@ -54,7 +54,9 @@ public enum ErrorEnum {
     FILE_UPDATE_FAILED("文件更新失败",HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_COPY_FAIL("文件更新失败",HttpStatus.INTERNAL_SERVER_ERROR),
     SUB_COPY_FAIL("子项移动更新失败",HttpStatus.INTERNAL_SERVER_ERROR),
-    USERNAME_OR_PASSWORD_ERROR("用户名或密码错误", HttpStatus.UNAUTHORIZED),;
+    USERNAME_OR_PASSWORD_ERROR("用户名或密码错误", HttpStatus.UNAUTHORIZED),
+    USER_BUCKET_ALREADY_INIT("用户存储桶已经初始化",HttpStatus.NO_CONTENT ),
+    USER_BUCKET_CREATE_FAIL("用户存储桶创建失败",HttpStatus.INTERNAL_SERVER_ERROR );
 
     private final String message;
 

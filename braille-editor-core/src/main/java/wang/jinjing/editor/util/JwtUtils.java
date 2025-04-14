@@ -1,14 +1,24 @@
 package wang.jinjing.editor.util;
 
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.swagger.v3.core.util.Json;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
+import wang.jinjing.editor.pojo.VO.JwtSubject;
 import wang.jinjing.editor.pojo.entity.EditorUser;
 
 import javax.crypto.SecretKey;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
@@ -31,15 +41,18 @@ public class JwtUtils {
      */
     public  String generateJwtToken(Authentication authentication) {
         EditorUser userPrincipal = (EditorUser) authentication.getPrincipal();
-
+        Collection<? extends GrantedAuthority> authorities = userPrincipal.getAuthorities();
+        JwtSubject jwtSubject = new JwtSubject(userPrincipal.getUsername(), userPrincipal.getNickname(), userPrincipal.getAuthorities());
+        String jsonStr = JSONUtil.toJsonStr(jwtSubject);
 
         return Jwts.builder()
-                .subject(userPrincipal.getUsername())
+                .subject(jsonStr)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(SignatureAlgorithm.HS512,getSecretKey())
                 .compact();
     }
+
 
     /**
      * 从JWT token中获取用户名
@@ -47,7 +60,9 @@ public class JwtUtils {
      * @return 用户名
      */
     public  String getUsernameFromJwtToken(String token) {
-        return getClaimFromToken(token, Claims::getSubject);
+        String subject = getClaimFromToken(token, Claims::getSubject);
+        JwtSubject jwtSubject = JSONUtil.toBean(subject, JwtSubject.class);
+        return jwtSubject.getUsername();
     }
 
     /**

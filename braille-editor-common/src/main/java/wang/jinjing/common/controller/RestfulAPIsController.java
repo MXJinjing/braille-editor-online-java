@@ -150,6 +150,10 @@ public abstract class RestfulAPIsController<
                                     @RequestParam(required = false) Integer size){
         E e = BeanConvertUtil.convertToEntity(eClass, dto);
         Sort sort = getSortFromMap(sorts);
+        // 从args中移除page/size/sorts参数
+        args.remove("page");
+        args.remove("size");
+        args.remove("sorts");
 
         if(page != null && size != null && page > 0 && size > 0){
             Page<VO> pageVO = crudService.searchPage(e, args, page, size, sort);

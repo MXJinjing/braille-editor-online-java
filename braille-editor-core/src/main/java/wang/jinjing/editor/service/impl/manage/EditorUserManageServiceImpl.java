@@ -15,13 +15,11 @@ import wang.jinjing.common.util.BeanConvertUtil;
 import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
 import wang.jinjing.common.pojo.ErrorEnum;
-import wang.jinjing.editor.pojo.enums.PasswordFormatEnum;
 import wang.jinjing.editor.pojo.enums.SysRoleEnum;
 import wang.jinjing.editor.repository.EditorUserRepository;
 import wang.jinjing.common.service.AbstractCRUDService;
 import wang.jinjing.editor.service.manage.EditorUserManageService;
 import wang.jinjing.editor.service.oss.OssBucketService;
-import wang.jinjing.editor.util.PasswordFormatChecker;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -471,6 +469,25 @@ public class EditorUserManageServiceImpl
             return 1;
         } else {
             throw new AuthServiceException(ErrorEnum.USER_NOT_FOUND);
+        }
+    }
+
+    @Autowired
+    private OssBucketService bucketService;
+
+    @Override
+    public int initBucket(Long id) {
+        String uuid = repository.selectById(id).getUuid();
+        String bucketName = "user-" + uuid;
+        if(bucketService.bucketExists(bucketName)) {
+            throw new UserServiceException(ErrorEnum.USER_BUCKET_ALREADY_INIT);
+        }else{
+            try {
+                bucketService.createBucket(bucketName);
+                return 1;
+            } catch (Exception e) {
+                throw new UserServiceException(ErrorEnum.USER_BUCKET_CREATE_FAIL);
+            }
         }
     }
 

@@ -36,7 +36,7 @@ public class EditorUserManageController extends RestfulAPIsController<
         setClasses(EditorUser.class, EditorUserVO.class);
     }
 
-    @PutMapping("/commons/setStatus/{id}")
+    @PutMapping("/{id}/setStatus")
     ResponseEntity<?> setAccountSecureStatus(@PathVariable Long id,
                                              @RequestParam(required = false) Boolean accountNonExpired,
                                              @RequestParam(required = false) Boolean accountNonLocked,
@@ -81,4 +81,9 @@ public class EditorUserManageController extends RestfulAPIsController<
         return (i > 0)? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Unknown error");
     }
 
+    @PatchMapping("/{id}/initBucket")
+    ResponseEntity<?> initBucket(@Valid @PathVariable Long id) {
+        int i = editorUserManageService.initBucket(id);
+        return (i > 0)? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Unknown error");
+    }
 }
