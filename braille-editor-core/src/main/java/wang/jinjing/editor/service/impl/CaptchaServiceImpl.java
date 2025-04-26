@@ -46,10 +46,12 @@ public class CaptchaServiceImpl implements CaptchaService {
         String string = UUID.randomUUID().toString();
         String verifyKey = CAPTCHA_KEY_PREFIX + "::" + string;
 
-        BufferedImage image = captchaProducer.createImage(captchaProducer.createText());
+        String text = captchaProducer.createText();
+
+        BufferedImage image = captchaProducer.createImage(text);
 
         // 在redis中存储验证码的键
-        redisService.set(verifyKey, captchaProducer.createText(), CAPTCHA_EXPIRATION, TimeUnit.SECONDS);
+        redisService.set(verifyKey, text, CAPTCHA_EXPIRATION, TimeUnit.SECONDS);
 
 
         // 转换流信息写出

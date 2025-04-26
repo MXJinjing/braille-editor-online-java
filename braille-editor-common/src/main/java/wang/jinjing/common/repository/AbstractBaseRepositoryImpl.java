@@ -11,14 +11,10 @@ import com.github.yulichang.query.MPJQueryWrapper;
 import org.apache.ibatis.session.ResultHandler;
 import org.springframework.data.domain.Sort;
 import wang.jinjing.common.pojo.entity.BaseEntity;
-import wang.jinjing.common.pojo.entity.Identifiable;
 
 import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AbstractBaseRepositoryImpl<T extends BaseEntity, R extends BaseMapper<T>>
         implements BaseRepository<T> {
@@ -86,6 +82,9 @@ public abstract class AbstractBaseRepositoryImpl<T extends BaseEntity, R extends
 
     @Override
     public List<T> selectByIds(Collection<? extends Serializable> idList) {
+        if(idList == null || idList.isEmpty()){
+            return new ArrayList<>();
+        }
         return mapper.selectByIds(idList);
     }
 
@@ -219,7 +218,7 @@ public abstract class AbstractBaseRepositoryImpl<T extends BaseEntity, R extends
     }
 
     @Override
-    public Page<T> searchPage(T t, Page<T> page, Map<String,Object> args, Sort sort){
+    public Page<T> searchPage(T t, Page<T> page, Map<String, Object> args, Sort sort){
         QueryWrapper<T> queryWrapper = new QueryWrapper<>();
         queryWrapper.setEntity(t);
         return (Page<T>) mapper.selectPage(page, queryWrapper);

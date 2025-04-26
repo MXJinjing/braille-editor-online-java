@@ -64,13 +64,14 @@ public interface BaseRepository<T extends BaseEntity> {
 
     List<T> searchList(T t, Map<String,Object> args, Sort sort);
 
-    Page<T> searchPage(T t, Page<T> page, Map<String,Object> args, Sort sort);
 
     Map<Integer, Boolean> insertBatch(List<T> t);
 
     Map<Long, Boolean> updateBatch(List<T> t);
 
     Map<Long, Boolean> deleteBatch(List<Long> ids);
+
+    Page<T> searchPage(T t, Page<T> page, Map<String, Object> args, Sort sort);
 
     int updateSingle(Long id, String field, Object value);
 

@@ -39,16 +39,9 @@ public class ServiceException extends RuntimeException{
     }
 
     public ServiceException(Exception cause) {
-        if(cause instanceof IllegalArgumentException){
-            this.errorEnum = ErrorEnum.ILLEGAL_ARGUMENT;
-        } else if (cause instanceof IllegalStateException){
-            this.errorEnum = ErrorEnum.ILLEGAL_STATE;
-        } else if (cause instanceof NullPointerException){
-            this.errorEnum = ErrorEnum.NULL_POINTER;
-        } else if (cause instanceof IOException){
-            this.errorEnum = ErrorEnum.IO_EXCEPTION;
-        } else {
-            this.errorEnum = ErrorEnum.UNKNOWN_ERROR;
+        super(cause.getMessage(), cause);
+        if(cause instanceof ServiceException){
+            this.errorEnum = ((ServiceException) cause).getErrorEnum();
         }
     }
 }

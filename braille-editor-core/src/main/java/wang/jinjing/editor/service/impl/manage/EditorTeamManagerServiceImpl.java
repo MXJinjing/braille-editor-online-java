@@ -21,7 +21,7 @@ import wang.jinjing.editor.repository.EditorTeamMemberRepository;
 import wang.jinjing.editor.repository.EditorTeamRepository;
 import wang.jinjing.editor.repository.EditorUserRepository;
 import wang.jinjing.editor.service.manage.EditorTeamManageService;
-import wang.jinjing.editor.service.oss.OssBucketService;
+import wang.jinjing.editor.service.oss.S3BucketService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +39,7 @@ public class EditorTeamManagerServiceImpl
     private EditorTeamMemberRepository teamMemberRepository;
 
     @Autowired
-    private OssBucketService ossBucketService;
+    private S3BucketService s3BucketService;
 
 
     protected EditorTeamManagerServiceImpl(EditorTeamRepository repository) {
@@ -101,8 +101,8 @@ public class EditorTeamManagerServiceImpl
 
     private void cleanupBucket(String bucketName) {
         try {
-            if (bucketName != null && ossBucketService.bucketExists(bucketName)) {
-                ossBucketService.deleteBucket(bucketName);
+            if (bucketName != null && s3BucketService.bucketExists(bucketName)) {
+                s3BucketService.deleteBucket(bucketName);
             }
         } catch (Exception e) {
             log.error("Bucket cleanup failed: {}", bucketName, e);
@@ -189,15 +189,11 @@ public class EditorTeamManagerServiceImpl
 
     private void deleteBucketWithRetry(String bucketName, int maxRetries) {
         int attempt = 0;
-        while (attempt < maxRetries) {
+        while (attempt < maxRetries && s3BucketService.bucketExists(bucketName)) {
             try {
-                ossBucketService.deleteBucket(bucketName);
+                s3BucketService.deleteBucket(bucketName);
                 return;
             } catch (ObjectStorageException e) {
-                if ("NoSuchBucket".equals(e.getErrorCode())) {
-                    log.debug("Bucket {} does not exist", bucketName);
-                    return;
-                }
 
                 if (++attempt >= maxRetries) {
                     throw new TeamServiceException(ErrorEnum.BUCKET_DELETE_FAIL, e);
@@ -300,11 +296,11 @@ public class EditorTeamManagerServiceImpl
             String bucketName = "team-" + team.getUuid(); // 团队存储桶命名规则
             try {
                 // 检查存储桶是否存在
-                if (ossBucketService.bucketExists(bucketName)) {
+                if (s3BucketService.bucketExists(bucketName)) {
                     throw new ObjectStorageException("Bucket already exists");
                 }
                 // 创建存储桶
-                ossBucketService.createBucket(bucketName);
+                s3BucketService.createBucket(bucketName);
 
                 // 维护团队-成员关系（原逻辑保留）
                 EditorTeamMember member = new EditorTeamMember();

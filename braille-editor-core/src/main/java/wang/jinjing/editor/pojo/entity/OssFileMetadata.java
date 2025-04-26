@@ -20,6 +20,9 @@ public class OssFileMetadata extends BaseEntity {
     @TableField("real_file_name")
     private String realFileName;
 
+    @TableField("path")
+    private String path;
+
     @TableField("s3_bucket")
     private String s3Bucket;
 
@@ -35,14 +38,11 @@ public class OssFileMetadata extends BaseEntity {
     @TableField("create_by")
     private Long createBy;
 
-    @TableField(value = "update_at", fill = FieldFill.INSERT_UPDATE)
-    private Date updateAt;
+    @TableField(value = "last_modified_at", fill = FieldFill.INSERT)
+    private Date lastModifiedAt;
 
-    @TableField("last_update_by")
-    private Long lastUpdateBy;
-
-    @TableField("parent_id")
-    private Long parentId;
+    @TableField("last_modified_by")
+    private Long lastModifiedBy;
 
     @TableField("parent_path")
     private String parentPath;
@@ -55,5 +55,17 @@ public class OssFileMetadata extends BaseEntity {
 
     @TableField("mime_type")
     private String mimeType;
+
+    @TableField("hidden")
+    private Boolean hidden;
+
+    @TableField("is_deleted")
+    private Boolean isDeleted;
+
+    @TableField("deleted_by")
+    private Long deletedBy;
+
+    @TableField("delete_at")
+    private Date deleteAt;
 
 }

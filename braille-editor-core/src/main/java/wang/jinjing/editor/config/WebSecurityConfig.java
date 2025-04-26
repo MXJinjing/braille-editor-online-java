@@ -65,10 +65,13 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
 
+                        .requestMatchers("/api/manage/**").hasAnyRole("ADMIN","SUPER_ADMIN")
+
                         // 开放公共API
                         .requestMatchers("/api/public/**").permitAll()
 
                         .anyRequest().authenticated())
+
 
                 // 禁用表单登录
                 .formLogin(AbstractHttpConfigurer::disable)

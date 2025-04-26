@@ -1,8 +1,6 @@
 package wang.jinjing.editor.pojo.VO;
 
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -15,7 +13,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class OssFileMetadataVO extends BaseVO {
+public class OssRecycleMetadataVO extends BaseVO {
 
     private Long id;
 
@@ -44,5 +42,11 @@ public class OssFileMetadataVO extends BaseVO {
     private String fileHash;
 
     private String mimeType;
+
+    private Long deletedBy;
+
+    private String deletedByUsername;
+
+    private Date deleteAt;
 
 }

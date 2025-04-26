@@ -1,7 +1,7 @@
 package wang.jinjing.editor.service.oss;
 
 import wang.jinjing.editor.exception.ObjectStorageException;
-import wang.jinjing.editor.pojo.VO.ObjectMetadataVO;
+import wang.jinjing.editor.pojo.VO.S3ObjectMetadataVO;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * 对象存储服务接口（Bucket名称通过实现类配置）
  */
-public interface OssObjectService {
+public interface S3ObjectService {
 
     void uploadBytes(String bucketName, String objectKey, byte[] data, Map<String, String> metadata) throws ObjectStorageException;
 
@@ -18,7 +18,7 @@ public interface OssObjectService {
 
     byte[] downloadAsBytes(String bucketName, String objectKey) throws ObjectStorageException;
 
-    InputStream downloadAsStream(String bucketName,String objectKey) throws ObjectStorageException;
+    InputStream downloadAsStream(String bucketName, String objectKey) throws ObjectStorageException;
 
     void deleteObject(String bucketName, String objectKey) throws ObjectStorageException;
 
@@ -26,9 +26,10 @@ public interface OssObjectService {
 
     String generatePresignedUrl(String bucketName, String objectKey, Duration expiration) throws ObjectStorageException;
 
-    ObjectMetadataVO getObjectMetadata(String bucketName, String objectKey) throws ObjectStorageException;
+    S3ObjectMetadataVO getObjectMetadata(String bucketName, String objectKey) throws ObjectStorageException;
 
     void copyObject(String sourceBucket, String sourcePath, String destBucket, String destPath);
 
     void deleteObjectsByPrefix(String bucket, String path);
 }
+

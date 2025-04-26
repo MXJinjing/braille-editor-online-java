@@ -1,5 +1,6 @@
 package wang.jinjing.editor.util;
 
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,7 @@ public class SecurityUtils {
     /**
      * 获取当前登录用户
      */
+    @NonNull
     public static EditorUser getCurrentUser() {
         Authentication authentication = getCurrentAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {

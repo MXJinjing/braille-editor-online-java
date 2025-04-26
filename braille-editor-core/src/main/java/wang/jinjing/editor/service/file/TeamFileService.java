@@ -1,7 +1,7 @@
 package wang.jinjing.editor.service.file;
 
 import org.springframework.web.multipart.MultipartFile;
-import wang.jinjing.editor.pojo.VO.ObjectMetadataVO;
+import wang.jinjing.editor.pojo.VO.S3ObjectMetadataVO;
 
 import java.io.InputStream;
 import java.util.List;
@@ -20,9 +20,9 @@ public interface TeamFileService {
 
     byte[] downloadAsBytes(Long teamId, String path);
 
-    ObjectMetadataVO getByPath(Long teamId, String filePath);
+    S3ObjectMetadataVO getByPath(Long teamId, String filePath);
 
-    List<ObjectMetadataVO> listFiles(Long teamId, String folderPath);
+    List<S3ObjectMetadataVO> listFiles(Long teamId, String folderPath);
 
     void moveToTrash(Long teamId, String path);
 

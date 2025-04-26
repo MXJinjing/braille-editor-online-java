@@ -4,16 +4,16 @@ package wang.jinjing.editor.controller.manage;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import wang.jinjing.common.controller.RestfulAPIsController;
 import wang.jinjing.common.pojo.VO.OperationResultVO;
+import wang.jinjing.common.service.BasicCRUDService;
 import wang.jinjing.editor.pojo.DTO.EditorUserDTO;
 import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
 import wang.jinjing.editor.repository.EditorUserRepository;
 import wang.jinjing.editor.service.manage.EditorUserManageService;
-import wang.jinjing.editor.service.RedisService;
-import wang.jinjing.editor.service.impl.manage.EditorUserManageServiceImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,17 +22,13 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/api/manage/user")
 public class EditorUserManageController extends RestfulAPIsController<
-        EditorUserDTO,EditorUser, EditorUserVO, EditorUserRepository, EditorUserManageServiceImpl> {
-
-    private final EditorUserManageService editorUserManageService;
+        EditorUserDTO,EditorUser, EditorUserVO, EditorUserRepository, BasicCRUDService<EditorUser,EditorUserVO>> {
 
     @Autowired
-    private RedisService redisService;
+    private EditorUserManageService editorUserManageService;
 
-    @Autowired
-    public EditorUserManageController(EditorUserManageServiceImpl crudService) {
+    public EditorUserManageController(BasicCRUDService<EditorUser,EditorUserVO> crudService) {
         super(crudService);
-        this.editorUserManageService = crudService;
         setClasses(EditorUser.class, EditorUserVO.class);
     }
 
@@ -83,7 +79,7 @@ public class EditorUserManageController extends RestfulAPIsController<
 
     @PatchMapping("/{id}/initBucket")
     ResponseEntity<?> initBucket(@Valid @PathVariable Long id) {
-        int i = editorUserManageService.initBucket(id);
-        return (i > 0)? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Unknown error");
+       editorUserManageService.initBucket(id);
+        return ResponseEntity.ok().build();
     }
 }

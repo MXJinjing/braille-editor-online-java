@@ -14,6 +14,7 @@ import wang.jinjing.common.pojo.VO.PageVO;
 import wang.jinjing.common.pojo.entity.BaseEntity;
 import wang.jinjing.common.repository.BaseRepository;
 import wang.jinjing.common.service.AbstractCRUDService;
+import wang.jinjing.common.service.BasicCRUDService;
 import wang.jinjing.common.util.BeanConvertUtil;
 
 import java.util.*;
@@ -24,7 +25,7 @@ public abstract class RestfulAPIsController<
             E extends BaseEntity,
             VO extends BaseVO,
             R extends BaseRepository<E>,
-            S extends AbstractCRUDService<E,VO,R>
+            S extends BasicCRUDService<E,VO>
         > implements RestfulAPIs<DTO> {
 
     Class<E> eClass;

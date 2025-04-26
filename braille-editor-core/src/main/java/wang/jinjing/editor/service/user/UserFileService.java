@@ -1,15 +1,12 @@
-package wang.jinjing.editor.service.file;
+package wang.jinjing.editor.service.user;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
 import wang.jinjing.common.pojo.FileTypeEnum;
-import wang.jinjing.editor.pojo.DTO.OssFileMetadataSearchDTO;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.pojo.VO.OssRecycleMetadataVO;
 
 import java.io.InputStream;
-import java.util.Date;
 import java.util.List;
 
 public interface UserFileService {
@@ -52,7 +49,4 @@ public interface UserFileService {
 
     List<OssRecycleMetadataVO> listRecycleFiles(Sort sort);
 
-    Page<OssFileMetadataVO> search(String realFileName, String path, Boolean isDir, Date createAtStart, Date createAtEnd , Date lastModifiedAtStart, Date lastModifiedAtEnd, String mimeType, Integer page, Integer size, Sort sort);
-
-    String generateLink(String filePath);
 }

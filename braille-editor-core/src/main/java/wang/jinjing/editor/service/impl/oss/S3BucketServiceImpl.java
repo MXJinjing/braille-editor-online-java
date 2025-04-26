@@ -9,8 +9,9 @@ import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import wang.jinjing.common.pojo.ErrorEnum;
 import wang.jinjing.editor.exception.ObjectStorageException;
-import wang.jinjing.editor.service.oss.OssBucketService;
+import wang.jinjing.editor.service.oss.S3BucketService;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -21,7 +22,7 @@ import java.util.Objects;
 
 @Slf4j
 @Service
-public class OssBucketServiceImpl implements OssBucketService {
+public class S3BucketServiceImpl implements S3BucketService {
 
     @Autowired
     private MinioClient minioClient;
@@ -85,9 +86,18 @@ public class OssBucketServiceImpl implements OssBucketService {
         }
     }
 
+    @Override
+    public Iterable<Result<Item>> listObjects(ListObjectsArgs args){
+        try {
+            return minioClient.listObjects(args);
+        } catch (Exception e) {
+            throw new ObjectStorageException(e);
+        }
+    }
+
     private void deleteAllObjs(String bucketName) throws ErrorResponseException, InsufficientDataException, InternalException, InvalidKeyException, InvalidResponseException, IOException, NoSuchAlgorithmException, ServerException, XmlParserException {
         List<DeleteObject> objects = new ArrayList<>();
-        Iterable<Result<Item>> results = minioClient.listObjects(
+        Iterable<Result<Item>> results = listObjects(
                 ListObjectsArgs.builder()
                         .bucket(bucketName)
                         .recursive(true)
@@ -145,7 +155,7 @@ public class OssBucketServiceImpl implements OssBucketService {
 
     private void validateBucketExist(String bucketName) throws ErrorResponseException, InsufficientDataException, InternalException, InvalidKeyException, InvalidResponseException, IOException, NoSuchAlgorithmException, ServerException, XmlParserException {
         if(!minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build())){
-            throw new ObjectStorageException("Bucket " + bucketName + " not exists.");
+            throw new ObjectStorageException(ErrorEnum.BUCKET_NOT_EXIST);
         }
     }
 }

@@ -17,7 +17,7 @@ public abstract class AbstractCRUDService<
          T extends BaseEntity,
          VO extends BaseVO,
          R extends BaseRepository<T>>
-          implements BasicCRUDService<T, VO>, BatchCRUDService<T, VO> {
+          implements BasicCRUDService<T, VO> {
 
     protected final R repository;
 

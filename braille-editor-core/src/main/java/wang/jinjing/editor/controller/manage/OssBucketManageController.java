@@ -1,62 +1,57 @@
 package wang.jinjing.editor.controller.manage;
 
 
-import cn.hutool.core.io.resource.InputStreamResource;
-import cn.hutool.core.util.StrUtil;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import wang.jinjing.common.controller.RestfulAPIsController;
-import wang.jinjing.editor.pojo.DTO.FileUploadBytesDTO;
-import wang.jinjing.editor.pojo.VO.FileBytesDownloadVO;
+import wang.jinjing.editor.pojo.entity.OssFileMetadata;
+import wang.jinjing.editor.repository.OssFileMetadataRepository;
 import wang.jinjing.editor.service.file.BaseFileService;
-import wang.jinjing.editor.service.oss.OssBucketService;
-
-import java.io.InputStream;
-import java.util.Arrays;
+import wang.jinjing.editor.service.oss.S3BucketService;
 
 @RestController
 @RequestMapping("/api/manage/bucket")
 public class OssBucketManageController {
 
     @Autowired
-    private OssBucketService ossBucketService;
+    private S3BucketService s3BucketService;
+    @Autowired
+    private BaseFileService baseFileService;
 
 
     @GetMapping("")
     public ResponseEntity<?> getAllBuckets() {
-        return ResponseEntity.ok(ossBucketService.listBuckets());
+        return ResponseEntity.ok(s3BucketService.listBuckets());
     }
 
     @PutMapping("/{bucketName}")
     public ResponseEntity<?> createBucket(@PathVariable String bucketName) {
-        ossBucketService.createBucket(bucketName);
+        s3BucketService.createBucket(bucketName);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{bucketName}/init")
+    public ResponseEntity<?> initBucket(@PathVariable String bucketName) {
+        baseFileService.initBucket(bucketName);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{bucketName}/exists")
     public ResponseEntity<?> bucketExists(@PathVariable String bucketName) {
-        return ResponseEntity.ok(ossBucketService.bucketExists(bucketName));
+        return ResponseEntity.ok(s3BucketService.bucketExists(bucketName));
     }
 
     @DeleteMapping("/{bucketName}")
-    public ResponseEntity<?> deleteBucket(@PathVariable String bucketName) {
-        ossBucketService.deleteBucket(bucketName);
+    public ResponseEntity<?> deleteBucket(@PathVariable  String bucketName) {
+        baseFileService.deleteBucket(bucketName);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{bucketName}/clear")
     public ResponseEntity<?> clearBucket(@PathVariable String bucketName) {
-        ossBucketService.clearBucket(bucketName);
+        baseFileService.clearBucket(bucketName);
         return ResponseEntity.ok().build();
     }
-
 
 }

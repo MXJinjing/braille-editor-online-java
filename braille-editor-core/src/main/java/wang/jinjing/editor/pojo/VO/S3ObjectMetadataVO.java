@@ -10,7 +10,7 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ObjectMetadataVO extends BaseVO {
+public class S3ObjectMetadataVO extends BaseVO {
 
     private String key;
 

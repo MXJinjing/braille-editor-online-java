@@ -16,5 +16,5 @@ public interface EditorUserManageService{
 
     int changePasswordNotCheck(Long userId, String newPassword);
 
-    int initBucket(@Valid Long id);
+    void initBucket(@Valid Long id);
 }

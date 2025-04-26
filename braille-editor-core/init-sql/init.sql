@@ -27,7 +27,7 @@ CREATE TABLE `editor_user`  (
                                          `username` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
                                          `uuid` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
                                          `nickname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-                                         `sys_role` enum('user','admin','super_admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'user',
+                                         `sys_role` enum('ROLE_USER','ROLE_ADMIN','ROLE_SUPER_ADMIN') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL DEFAULT 'user',
                                          `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
                                          `phone` varchar(60) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
                                          `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
@@ -75,26 +75,30 @@ CREATE TABLE `editor_team`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `oss_file_metadata`;
 CREATE TABLE `oss_file_metadata`  (
-                                      `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
-                                      `real_file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-                                      `s3_bucket` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-                                      `s3_key` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-                                      `file_size` bigint NOT NULL,
-                                      `create_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
-                                      `create_by` bigint UNSIGNED NULL,
-                                      `update_at` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                                      `last_update_by` bigint UNSIGNED NULL,
-                                      `parent_id` BIGINT UNSIGNED NULL,
-                                      `parent_path` varchar(1024) NULL ,
-                                      `is_dir` tinyint(1) NOT NULL DEFAULT 0,
-                                      `file_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-                                      `mime_type` varchar(127) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-                                      PRIMARY KEY (`id`) USING BTREE,
-                                      CONSTRAINT `fk_create_by` FOREIGN KEY (`create_by`) REFERENCES `editor_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-                                      CONSTRAINT `fk_last_update_by` FOREIGN KEY (`last_update_by`) REFERENCES `editor_user` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-                                      CONSTRAINT `fk_parent_id` FOREIGN KEY (`parent_id`) REFERENCES `oss_file_metadata` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
-                                      UNIQUE INDEX `idx_storage_key`(`s3_bucket`(256),`s3_key`(512) ASC) USING BTREE,
-                                      INDEX `idx_parent_dir`(`parent_id`, `is_dir`)
+                                       `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+                                       `real_file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+                                       `path` varchar(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+                                       `s3_bucket` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+                                       `s3_key` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+                                       `file_size` bigint NOT NULL DEFAULT 0,
+                                       `create_at` datetime NULL DEFAULT CURRENT_TIMESTAMP,
+                                       `create_by` bigint UNSIGNED NULL,
+                                       `last_modified_at` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                       `last_modified_by` bigint UNSIGNED NULL,
+                                       `parent_path` varchar(512) NULL,
+                                       `is_dir` tinyint(1) NOT NULL DEFAULT 0,
+                                       `file_hash` char(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+                                       `mime_type` varchar(127) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+                                       `hidden` tinyint(1) NOT NULL DEFAULT 0,
+                                       `is_deleted` tinyint(1) NOT NULL DEFAULT 0,
+                                       `deleted_at` datetime NULL DEFAULT NULL,
+                                       `deleted_by` bigint UNSIGNED NULL,
+                                       PRIMARY KEY (`id`) USING BTREE,
+                                       CONSTRAINT `fk_create_by` FOREIGN KEY (`create_by`) REFERENCES `editor_user` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT,
+                                       CONSTRAINT `fk_last_update_by` FOREIGN KEY (`last_modified_by`) REFERENCES `editor_user` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT,
+                                       CONSTRAINT `fk_last_delete_by` FOREIGN KEY (`deleted_by`) REFERENCES `editor_user` (`id`) ON DELETE SET NULL ON UPDATE RESTRICT,
+                                       INDEX `idx_s3_bucket` (`s3_bucket`),
+                                       INDEX `idx_path` (`path`(512))
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -103,6 +107,7 @@ CREATE TABLE `oss_file_metadata`  (
 DROP TABLE IF EXISTS `oss_file_recycle`;
 CREATE TABLE `oss_file_recycle`  (
                                      `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT,
+                                     `s3_key_prefix` varchar(255) NOT NULL,
                                      `origin_file_id` bigint UNSIGNED NOT NULL,
                                      `origin_file_path` bigint UNSIGNED NOT NULL,
                                      `operated_by` bigint UNSIGNED NOT NULL,

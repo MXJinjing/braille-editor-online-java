@@ -17,10 +17,8 @@ class JwtUtilsTest {
     @Autowired
     private JwtUtils jwtUtils;
 
-    private static String JWT_TOKEN = "eyJhbGciOiJIUzUxMiJ9." +
-            "eyJzdWIiOiJ7fSIsImlhdCI6MTc0NDMwMjIwOCwiZXhwIjoxNzQ0Mzg4NjA4fQ." +
-            "Oam731VF4g6s6rI7B0jIpq2AAO5fmsEztwbR3HvnrfS5MneXt8WHLdPZNs78OBtTZlWbt6mz891lXwFj-LraLQ";
-    private static String USER_NAME  = "admin2";
+    private static String JWT_TOKEN = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ7XCJ1c2VybmFtZVwiOlwiYWRtaW4xXCIsXCJuaWNrbmFtZVwiOlwi57O757uf566h55CG5ZGYMVwiLFwiYXV0aG9yaXRpZXNcIjpbXCJzdXBlcl9hZG1pblwiXX0iLCJpYXQiOjE3NDQ4MDkzNTgsImV4cCI6MTc0NDg5NTc1OH0.0C1y36TnZRMO5o2MbBBEuDnTkXaviix6FZ3QmwrWzxnHh2uU9Sv2VjxwrMeGtWD3tOR8mMVAlsFtm7amFybTTQ";
+    private static String USER_NAME  = "admin1";
 
     @Test
     void getUsernameFromJwtToken() {

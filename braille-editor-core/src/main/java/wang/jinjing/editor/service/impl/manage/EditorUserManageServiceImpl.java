@@ -18,8 +18,9 @@ import wang.jinjing.common.pojo.ErrorEnum;
 import wang.jinjing.editor.pojo.enums.SysRoleEnum;
 import wang.jinjing.editor.repository.EditorUserRepository;
 import wang.jinjing.common.service.AbstractCRUDService;
+import wang.jinjing.editor.service.file.BaseFileService;
 import wang.jinjing.editor.service.manage.EditorUserManageService;
-import wang.jinjing.editor.service.oss.OssBucketService;
+import wang.jinjing.editor.service.oss.S3BucketService;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,10 +33,13 @@ public class EditorUserManageServiceImpl
         implements EditorUserManageService {
 
     @Autowired
-    private OssBucketService ossBucketService;
+    private S3BucketService s3BucketService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private BaseFileService baseFileService;
 
     @Autowired
     protected EditorUserManageServiceImpl(EditorUserRepository repository) {
@@ -76,8 +80,8 @@ public class EditorUserManageServiceImpl
 
     private void cleanupBucket(String bucketName) {
         try {
-            if (bucketName != null && ossBucketService.bucketExists(bucketName)) {
-                ossBucketService.deleteBucket(bucketName);
+            if (bucketName != null && s3BucketService.bucketExists(bucketName)) {
+                s3BucketService.deleteBucket(bucketName);
             }
         } catch (Exception e) {
             log.error("Bucket cleanup failed: {}", bucketName, e);
@@ -163,14 +167,14 @@ public class EditorUserManageServiceImpl
 
     private void deleteBucketWithRetry(String bucketName, int maxRetries) {
         int attempt = 0;
-        boolean b = ossBucketService.bucketExists(bucketName);
+        boolean b = s3BucketService.bucketExists(bucketName);
         if(!b) {
             log.warn("Bucket {} does not exist, skipping deletion.", bucketName);
             return;
         }
         while (attempt < maxRetries) {
             try {
-                ossBucketService.deleteBucket(bucketName);
+                s3BucketService.deleteBucket(bucketName);
                 return;
             } catch (ObjectStorageException e) {
 
@@ -266,10 +270,10 @@ public class EditorUserManageServiceImpl
         successUsers.forEach((originalIndex, user) -> {
             String bucketName = "user-" + user.getUuid();
             try {
-                if (ossBucketService.bucketExists(bucketName)) {
+                if (s3BucketService.bucketExists(bucketName)) {
                     throw new ObjectStorageException("Bucket already exists");
                 }
-                ossBucketService.createBucket(bucketName);
+                s3BucketService.createBucket(bucketName);
             } catch (Exception e) {
                 // 记录错误并标记需要删除用户
                 errorMap.put(originalIndex, ErrorEnum.BUCKET_CREATE_FAIL);
@@ -472,23 +476,11 @@ public class EditorUserManageServiceImpl
         }
     }
 
-    @Autowired
-    private OssBucketService bucketService;
-
     @Override
-    public int initBucket(Long id) {
+    public void initBucket(Long id) {
         String uuid = repository.selectById(id).getUuid();
         String bucketName = "user-" + uuid;
-        if(bucketService.bucketExists(bucketName)) {
-            throw new UserServiceException(ErrorEnum.USER_BUCKET_ALREADY_INIT);
-        }else{
-            try {
-                bucketService.createBucket(bucketName);
-                return 1;
-            } catch (Exception e) {
-                throw new UserServiceException(ErrorEnum.USER_BUCKET_CREATE_FAIL);
-            }
-        }
+        baseFileService.initBucket(bucketName);
     }
 
     // ===== 私有方法 =====

@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import wang.jinjing.common.exception.ServiceException;
 import wang.jinjing.editor.exception.AuthServiceException;
 import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.VO.LoginResponseVO;
@@ -69,7 +70,7 @@ public class AuthServiceImpl implements AuthService {
 
             // 如果校验失败了
             if (Objects.isNull(authenticate)) {
-                throw new AuthServiceException("用户名或密码错误");
+                throw new AuthServiceException("");
             }
             EditorUser userDetails = (EditorUser) (authenticate.getPrincipal());
             // 自己生成jwt token给前端
@@ -88,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
             editorUserRepositoryImpl.updateSingle(userDetails.getId(), "last_login_at", new Date());
             return new LoginResponseVO("Bearer " + token, userDetails.getUsername(), expirationDateFromToken);
         } catch (Exception e) {
-            throw new AuthServiceException(ErrorEnum.USERNAME_OR_PASSWORD_ERROR,e);
+            throw new ServiceException(ErrorEnum.USERNAME_OR_PASSWORD_ERROR,e);
         }
 
     }

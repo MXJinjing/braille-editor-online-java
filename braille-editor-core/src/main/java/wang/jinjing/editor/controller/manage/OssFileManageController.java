@@ -5,6 +5,7 @@ import cn.hutool.core.io.resource.InputStreamResource;
 import cn.hutool.core.util.StrUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -14,12 +15,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import wang.jinjing.common.controller.RestfulAPIsController;
+import wang.jinjing.common.pojo.FileTypeEnum;
 import wang.jinjing.editor.pojo.DTO.FileUploadBytesDTO;
 import wang.jinjing.editor.pojo.VO.FileBytesDownloadVO;
+import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.service.file.BaseFileService;
 
 import java.io.InputStream;
 import java.util.Arrays;
+
+import static wang.jinjing.common.controller.RestfulAPIsController.getSortFromMap;
 
 @RestController
 @RequestMapping("/api/manage/file")
@@ -28,23 +33,21 @@ public class OssFileManageController {
     @Autowired
     private BaseFileService baseFileService;
 
-    @PostMapping("/{bucketName}/upload")
-    public ResponseEntity<?> upload(@NotBlank @PathVariable String bucketName,
-                                    @Valid @RequestParam("file") MultipartFile file,
-                                    @NotBlank @RequestParam("path") String path,
-                                    @RequestParam(value = "overwrite", defaultValue = "false", required = false) Boolean overwrite ) {
+    @PostMapping("/upload")
+    public ResponseEntity<?> upload(@RequestParam("bucket") String bucketName,
+                                    @RequestParam("file") MultipartFile file,
+                                    @RequestParam(value = "fileName", required = false) String fileName,
+                                    @RequestParam("path") String path) {
         if(file.isEmpty()){
             return ResponseEntity.badRequest().build();
         }
-
-        baseFileService.uploadFile(bucketName, path, file, overwrite);
-        return ResponseEntity.ok().build();
+        OssFileMetadataVO ossFileMetadataVO = baseFileService.uploadFile(bucketName, path, file);
+        return ResponseEntity.ok().body(ossFileMetadataVO);
     }
 
-    @PostMapping("/{bucketName}/upload/bytes")
-    public ResponseEntity<?> upload(@NotBlank @PathVariable String bucketName,
-                                    @Valid @RequestParam("file") FileUploadBytesDTO file,
-                                    @RequestParam(value = "overwrite", defaultValue = "false", required = false) Boolean overwrite ) {
+    @PostMapping("/upload/bytes")
+    public ResponseEntity<?> upload(@RequestParam("bucket") String bucketName,
+                                    @RequestParam("file") FileUploadBytesDTO file) {
         if(file.getContent().length == 0 || StrUtil.isBlank(file.getPath()) || StrUtil.isBlank(file.getFilename())){
             return ResponseEntity.badRequest().build();
         }
@@ -56,13 +59,13 @@ public class OssFileManageController {
             mimeType = file.getMimeType();
         }
 
-        baseFileService.uploadFileByBytes(bucketName,file.getPath(),file.getFilename(), mimeType, file.getContent() ,overwrite);
+        baseFileService.uploadFileByBytes(bucketName,file.getPath(),file.getFilename(), mimeType, file.getContent());
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/{bucketName}/download")
-    public ResponseEntity<?> download(@NotBlank @PathVariable String bucketName,
-                                      @NotBlank @RequestParam String path){
+    @GetMapping("/download")
+    public ResponseEntity<?> download(@RequestParam("bucket") String bucketName,
+                                      @RequestParam String path){
         InputStream fileStream = baseFileService.downloadFile(bucketName, path);
         InputStreamResource resource = new InputStreamResource(fileStream);
 
@@ -77,9 +80,9 @@ public class OssFileManageController {
                 .body(resource);
     }
 
-    @GetMapping("/{bucketName}/download/bytes")
-    public ResponseEntity<?> downloadBytes(@NotBlank @PathVariable String bucketName,
-                                           @NotBlank @RequestParam String path){
+    @GetMapping("/download/bytes")
+    public ResponseEntity<?> downloadBytes(@RequestParam("bucket") String bucketName,
+                                           @RequestParam String path){
 
         String fileName = path.substring(path.lastIndexOf("/")+1);
         String content = Arrays.toString(baseFileService.downloadAsBytes(bucketName, path));
@@ -91,81 +94,80 @@ public class OssFileManageController {
         return ResponseEntity.ok().body(fileBytesDownloadVO);
     }
 
-    @GetMapping("/{bucketName}/metadata")
-    public ResponseEntity<?> getMetadata(@NotBlank @PathVariable String bucketName,
-                                         @NotBlank @RequestParam String path,
-                                         @RequestParam(value = "isDir", defaultValue = "false", required = false) Boolean isDir){
-        return ResponseEntity.ok(baseFileService.getMetadataByPath(bucketName, path, isDir));
+    @GetMapping("/metadata")
+    public ResponseEntity<?> getMetadata(@RequestParam("bucket") String bucketName,
+                                         @RequestParam String path,
+                                         @RequestParam(value = "isDir", required = false) Boolean isDir
+    ){
+        FileTypeEnum fileTypeEnum = FileTypeEnum.ALL;
+        if(isDir != null){
+            fileTypeEnum = isDir?FileTypeEnum.FOLDER:FileTypeEnum.FILE;
+        }
+        return ResponseEntity.ok(baseFileService.getMetadataByPath(bucketName, path, fileTypeEnum));
     }
 
-    @GetMapping("/{bucketName}/list")
-    public ResponseEntity<?> listFiles(@NotBlank @PathVariable String bucketName,
-                                       @NotBlank @RequestParam String folderPath,
-                                       @RequestParam(value = "sort", defaultValue = "name", required = false) String sort){
-        Sort parsedSort = RestfulAPIsController.getSortFromMap(sort);
+    @GetMapping("/list")
+    public ResponseEntity<?> listFiles(@RequestParam("bucket") String bucketName,
+                                       @RequestParam("path") String folderPath,
+                                       @RequestParam(value = "sort", required = false) String sort){
+        Sort parsedSort = Sort.unsorted();
+        if(StrUtil.isNotBlank(sort)){
+            parsedSort = getSortFromMap(sort);
+        }
         return ResponseEntity.ok(baseFileService.listFiles(bucketName, folderPath, parsedSort));
     }
 
-    @GetMapping("/{bucketName}/list/paged")
-    public ResponseEntity<?> listPagedFiles(@NotBlank @PathVariable String bucketName,
-                                            @NotBlank @RequestParam String folderPath,
+    @GetMapping("/list/paged")
+    public ResponseEntity<?> listPagedFiles(@RequestParam("bucket") String bucketName,
+                                            @RequestParam("path")  String folderPath,
                                             @RequestParam(value = "page", defaultValue = "0", required = false) int page,
                                             @RequestParam(value = "size", defaultValue = "10", required = false) int size,
                                             @RequestParam(value = "sort", defaultValue = "name", required = false) String sort){
-        Sort parsedSort = RestfulAPIsController.getSortFromMap(sort);
+        Sort parsedSort = getSortFromMap(sort);
         return ResponseEntity.ok(baseFileService.listPagedFiles(bucketName, folderPath, page, size, parsedSort));
     }
 
-    @PutMapping("/{bucketName}/delete")
-    public ResponseEntity<?> moveToTrash(@NotBlank @PathVariable String bucketName,
-                                         @NotBlank @RequestParam String path,
-                                         @RequestParam(value = "isDir", defaultValue = "false", required = false) Boolean isDir){
-        baseFileService.moveToTrash(bucketName, path, isDir);
+    @PutMapping("/delete")
+    public ResponseEntity<?> moveToTrash(@RequestParam("bucket") String bucketName,
+                                         @RequestParam String path){
+        baseFileService.deleteFiles(bucketName, path);
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/{bucketName}/moveToTrash/batch")
-    public ResponseEntity<?> moveToTrash(@NotBlank @PathVariable String bucketName,
-                                         @RequestParam(value = "paths") String[] paths,
-                                         @RequestParam(value = "isDirs") Boolean[] isDirs){
-        if(paths.length != isDirs.length){
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(baseFileService.moveToTrash(bucketName, Arrays.asList(paths), Arrays.asList(isDirs)));
+    @PutMapping("/recoveryFromTrash")
+    public ResponseEntity<?> recoveryFromTrash(@RequestParam("bucket") String bucketName,
+                                               @RequestParam(value = "deleteId") Long deleteId){
+        baseFileService.recoveryFromTrash(bucketName, deleteId);
+        return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/{bucketName}/recoveryFromTrash")
-    public ResponseEntity<?> recoveryFromTrash(@NotBlank @PathVariable String bucketName,
-                                               @RequestParam(value = "deleteIds") Long[] deleteIds){
-        return ResponseEntity.ok(baseFileService.recoveryFromTrash(bucketName, Arrays.asList(deleteIds)));
+    @DeleteMapping("/realDelete")
+    public ResponseEntity<?> realDelete(@RequestParam("bucket") String bucketName,
+                                        @RequestParam(value = "deleteId") Long deleteId){
+        baseFileService.realDeleteFiles(bucketName, deleteId);
+        return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{bucketName}/realDelete")
-    public ResponseEntity<?> realDelete(@NotBlank @PathVariable String bucketName,
-                                        @RequestParam(value = "deleteIds") Long[] deleteIds){
-        return ResponseEntity.ok(baseFileService.realDeleteFiles(bucketName, Arrays.asList(deleteIds)));
+    @PostMapping("/mkdir")
+    public ResponseEntity<?> mkDir(@RequestParam("bucket") String bucketName,
+                                    @RequestParam String folderPath,
+                                   @RequestParam String folderName){
+        return ResponseEntity.ok(baseFileService.mkDir(bucketName, folderPath, folderName));
     }
 
-    @PostMapping("/{bucketName}/mkdir")
-    public ResponseEntity<?> mkDir(@NotBlank @PathVariable String bucketName,
-                                    @NotBlank @RequestParam String folderPath){
-        return ResponseEntity.ok(baseFileService.mkDir(bucketName, folderPath));
-    }
-
-    @PostMapping("/{bucketName}/mkdirs")
-    public ResponseEntity<?> mkDirsWithParent(@NotBlank @PathVariable String bucketName,
-                                               @NotBlank @RequestParam String pathWithFolderName){
+    @PostMapping("/mkdirs")
+    public ResponseEntity<?> mkDirsWithParent(@RequestParam("bucket") String bucketName,
+                                               @RequestParam String pathWithFolderName){
         return ResponseEntity.ok(baseFileService.mkDirsWithParent(bucketName, pathWithFolderName));
     }
 
-    @PutMapping("/{bucketName}/copy")
-    public ResponseEntity<?> copyObject(@NotBlank @PathVariable String bucketName,
-                                        @NotBlank @RequestParam String sourcePath,
-                                        @NotBlank @RequestParam String destBucket,
-                                        @NotBlank @RequestParam String destPath,
-                                        @RequestParam(value = "overwrite", defaultValue = "false", required = false) Boolean overwrite,
-                                        @RequestParam(value = "isDir", defaultValue = "false", required = false) Boolean isDir){
-        baseFileService.copyObject(bucketName, sourcePath, destBucket, destPath, overwrite, isDir);
+    @PutMapping("/copy")
+    public ResponseEntity<?> copyObject(@RequestParam("bucket") String bucketName,
+                                        @RequestParam String sourcePath,
+                                        @RequestParam String destBucket,
+                                        @RequestParam String destPath,
+                                        @RequestParam(value = "overwrite", defaultValue = "false", required = false) Boolean overwrite){
+        baseFileService.copyFile(bucketName, sourcePath, destBucket, destPath, overwrite);
         return ResponseEntity.ok().build();
     }
 

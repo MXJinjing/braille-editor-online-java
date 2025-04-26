@@ -33,48 +33,29 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public LoginResponseVO login(@RequestBody LoginRequestDTO dto) {
+    public ResponseEntity<?> login(@RequestBody LoginRequestDTO dto) {
         // 先进行验证码校验
         if(captchaEnabled) {
             //校验参数是否为空
             if(dto.getCaptchaCode() == null || dto.getCaptchaUUID() == null) {
-                throw new AuthenticationServiceException("验证码不能为空");
+                return ResponseEntity.badRequest().body("验证码不能为空");
             }
 
             if(!captchaService.verifyCaptcha(dto.getCaptchaCode(), dto.getCaptchaUUID())) {
-                throw new AuthenticationServiceException("验证码错误");
+                return ResponseEntity.badRequest().body("验证码错误");
             }
         }
 
         // 校验参数是否为空
         if(dto.getUsername() == null || dto.getPassword() == null) {
-            throw new AuthenticationServiceException("用户名或密码不能为空");
+            return ResponseEntity.badRequest().body("用户名或密码不能为空");
         }
 
-        return authService.authenticateLogin(dto.getUsername(), dto.getPassword());
+        LoginResponseVO loginResponseVO = authService.authenticateLogin(dto.getUsername(), dto.getPassword());
+        return ResponseEntity.ok(loginResponseVO);
     }
 
-    @GetMapping("/info")
-    public ResponseEntity<?> getCurrentUserInfo() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal1 = authentication.getPrincipal();
-        if (principal1 instanceof EditorUser editorUser) {
-            return ResponseEntity.ok(BeanConvertUtil.convertToVo(EditorUserVO.class,editorUser));
-        }else {
-            return ResponseEntity.ok(principal1);
-        }
-    }
 
-    @GetMapping("/info/simple")
-    public ResponseEntity<?> getCurrentUserInfoSimple() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Object principal1 = authentication.getPrincipal();
-        if (principal1 instanceof EditorUser editorUser) {
-            return ResponseEntity.ok(BeanConvertUtil.convertToVo(EditorUserSimpleVO.class,editorUser));
-        }else {
-            return ResponseEntity.ok(principal1);
-        }
-    }
 
     @GetMapping("/check")
     public ResponseEntity<?> checkLogin() {

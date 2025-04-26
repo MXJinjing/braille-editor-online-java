@@ -9,9 +9,10 @@ import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import wang.jinjing.common.pojo.ErrorEnum;
 import wang.jinjing.editor.exception.ObjectStorageException;
-import wang.jinjing.editor.pojo.VO.ObjectMetadataVO;
-import wang.jinjing.editor.service.oss.OssObjectService;
+import wang.jinjing.editor.pojo.VO.S3ObjectMetadataVO;
+import wang.jinjing.editor.service.oss.S3ObjectService;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,12 +26,12 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-public class OssObjectServiceImpl implements OssObjectService {
+public class S3ObjectServiceImpl implements S3ObjectService {
 
     private final MinioClient minioClient;
 
     @Autowired
-    public OssObjectServiceImpl(MinioClient minioClient) {
+    public S3ObjectServiceImpl(MinioClient minioClient) {
         this.minioClient = minioClient;
     }
 
@@ -47,7 +48,7 @@ public class OssObjectServiceImpl implements OssObjectService {
 
             minioClient.putObject(args);
         } catch (Exception e) {
-            throw new ObjectStorageException("Failed to upload bytes: " + e.getMessage(), e);
+            throw new ObjectStorageException(ErrorEnum.UPLOAD_BYTES_FAILED);
         }
     }
 
@@ -65,7 +66,7 @@ public class OssObjectServiceImpl implements OssObjectService {
 
             minioClient.putObject(args);
         } catch (Exception e) {
-            throw new ObjectStorageException("Failed to upload stream: " + e.getMessage(), e);
+            throw new ObjectStorageException(ErrorEnum.UPLOAD_STREAM_FAILED);
         }
     }
 
@@ -83,7 +84,7 @@ public class OssObjectServiceImpl implements OssObjectService {
         } catch (IOException e) {
             throw new ObjectStorageException("Stream read error: " + e.getMessage(), e);
         } catch (Exception e) {
-            throw new ObjectStorageException("Download failed: " + e.getMessage(), e);
+            throw new ObjectStorageException(ErrorEnum.FILE_DOWNLOAD_FAILED);
         }
     }
 
@@ -98,7 +99,7 @@ public class OssObjectServiceImpl implements OssObjectService {
                             .build()
             );
         } catch (Exception e) {
-            throw new ObjectStorageException("Failed to get object stream: " + e.getMessage(), e);
+            throw new ObjectStorageException(ErrorEnum.FILE_DOWNLOAD_FAILED);
         }
     }
 
@@ -113,7 +114,7 @@ public class OssObjectServiceImpl implements OssObjectService {
                             .build()
             );
         } catch (Exception e) {
-            throw new ObjectStorageException("Delete failed: " + e.getMessage(), e);
+            throw new ObjectStorageException(ErrorEnum.FILE_DELETE_FAILED);
         }
     }
 
@@ -156,7 +157,7 @@ public class OssObjectServiceImpl implements OssObjectService {
     }
 
     @Override
-    public ObjectMetadataVO getObjectMetadata(String bucketName, String objectKey)
+    public S3ObjectMetadataVO getObjectMetadata(String bucketName, String objectKey)
             throws ObjectStorageException {
         try {
             StatObjectResponse response = minioClient.statObject(
@@ -166,14 +167,14 @@ public class OssObjectServiceImpl implements OssObjectService {
                             .build()
             );
 
-            ObjectMetadataVO metadata = new ObjectMetadataVO();
+            S3ObjectMetadataVO metadata = new S3ObjectMetadataVO();
             metadata.setContentType(response.contentType());
             metadata.setSize(response.size());
             metadata.setLastModified(response.lastModified());
             metadata.setUserMetadata(response.userMetadata());
             return metadata;
         } catch (Exception e) {
-            throw new ObjectStorageException("Metadata retrieval failed: " + e.getMessage(), e);
+            throw new ObjectStorageException(ErrorEnum.OSS_GET_METADATA_FAILED);
         }
     }
 
@@ -263,5 +264,6 @@ public class OssObjectServiceImpl implements OssObjectService {
             throw new ObjectStorageException("Failed to delete objects by prefix: " + e.getMessage(), e);
         }
     }
+
 
 }

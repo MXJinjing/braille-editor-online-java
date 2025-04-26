@@ -1,23 +1,27 @@
 package wang.jinjing.editor.exception;
 
-public class ObjectStorageException extends RuntimeException {
+import wang.jinjing.common.exception.ServiceException;
+import wang.jinjing.common.pojo.ErrorEnum;
 
-    public ObjectStorageException() {
+public class ObjectStorageException extends ServiceException {
+
+    public ObjectStorageException(String message, ErrorEnum errorEnum) {
+        super(message, errorEnum);
+    }
+
+    public ObjectStorageException(ErrorEnum errorEnum) {
+        super(errorEnum);
     }
 
     public ObjectStorageException(String message) {
         super(message);
     }
 
-    public ObjectStorageException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ObjectStorageException(Throwable cause) {
+    public ObjectStorageException(Exception cause) {
         super(cause);
     }
 
-    public String getErrorCode() {
-        return null;
+    public ObjectStorageException(String message, Exception cause) {
+        super(message, cause);
     }
 }

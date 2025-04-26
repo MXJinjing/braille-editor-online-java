@@ -5,9 +5,9 @@ import lombok.Getter;
 
 @Getter
 public enum SysRoleEnum {
-    USER("user"),
-    ADMIN("admin"),
-    SUPER_ADMIN("super_admin")
+    USER("ROLE_USER"),
+    ADMIN("ROLE_ADMIN"),
+    SUPER_ADMIN("ROLE_SUPER_ADMIN")
     ;
 
     @EnumValue

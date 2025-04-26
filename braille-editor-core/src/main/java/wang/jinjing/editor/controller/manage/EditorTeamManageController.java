@@ -5,8 +5,10 @@ import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import wang.jinjing.common.controller.RestfulAPIsController;
+import wang.jinjing.common.service.BasicCRUDService;
 import wang.jinjing.editor.pojo.DTO.EditorTeamDTO;
 import wang.jinjing.editor.pojo.VO.EditorTeamVO;
 import wang.jinjing.editor.pojo.entity.EditorTeam;
@@ -18,14 +20,15 @@ import wang.jinjing.editor.service.impl.manage.EditorTeamManagerServiceImpl;
 @RestController
 @RequestMapping("/api/manage/team")
 public class EditorTeamManageController extends RestfulAPIsController<
-        EditorTeamDTO,EditorTeam, EditorTeamVO, EditorTeamRepository, EditorTeamManagerServiceImpl> {
-
-    private final EditorTeamManageService editorTeamManagerService;
+        EditorTeamDTO,EditorTeam, EditorTeamVO, EditorTeamRepository, BasicCRUDService<EditorTeam,EditorTeamVO>> {
 
     @Autowired
-    public EditorTeamManageController(EditorTeamManagerServiceImpl crudService) {
+    private EditorTeamManageService editorTeamManagerService;
+
+    @Autowired
+    public EditorTeamManageController(
+            BasicCRUDService<EditorTeam, EditorTeamVO> crudService) {
         super(crudService);
-        this.editorTeamManagerService = crudService;
     }
 
 

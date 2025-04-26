@@ -1,5 +1,8 @@
 package wang.jinjing.editor.service.oss;
 
+import io.minio.ListObjectsArgs;
+import io.minio.Result;
+import io.minio.messages.Item;
 import wang.jinjing.editor.exception.ObjectStorageException;
 
 import java.util.List;
@@ -7,7 +10,7 @@ import java.util.List;
 /**
  * 对象存储服务接口（Bucket名称通过实现类配置）
  */
-public interface OssBucketService {
+public interface S3BucketService {
 
     // 桶操作
     void createBucket(String bucketName) throws ObjectStorageException;
@@ -15,6 +18,8 @@ public interface OssBucketService {
     void deleteBucket(String bucketName) throws ObjectStorageException;
 
     void clearBucket(String bucketName) throws ObjectStorageException;
+
+    Iterable<Result<Item>> listObjects(ListObjectsArgs args);
 
     boolean bucketExists(String bucketName) throws ObjectStorageException;
 
