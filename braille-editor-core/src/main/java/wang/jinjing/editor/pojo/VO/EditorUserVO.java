@@ -19,8 +19,6 @@ public class EditorUserVO extends BaseVO {
 
     private String username;
 
-    private String uuid;
-
     private String nickname;
 
     private SysRoleEnum sysRole;

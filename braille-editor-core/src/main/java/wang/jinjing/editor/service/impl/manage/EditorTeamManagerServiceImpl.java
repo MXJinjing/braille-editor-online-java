@@ -53,9 +53,8 @@ public class EditorTeamManagerServiceImpl
     @Override
     @Transactional
     public long addOne(EditorTeam editorTeam) {
-        // 为团队分配UUID
-        editorTeam.setUuid(UUID.randomUUID().toString());
-        String teamBucketName = "team-" + editorTeam.getUuid();
+
+        String teamBucketName = "team-" + editorTeam.getId();
 
         try {
             // 检测用户是否存在
@@ -73,8 +72,6 @@ public class EditorTeamManagerServiceImpl
             editorTeam.setCreateAt(current);
 
             // 为团队分配UUID
-            UUID uuid = UUID.nameUUIDFromBytes("editor_team".getBytes());
-            editorTeam.setUuid(uuid.toString());
 
             long teamId = super.addOne(editorTeam);
 
@@ -167,7 +164,7 @@ public class EditorTeamManagerServiceImpl
     public int deleteOne(Long id) {
         // 1. 获取团队信息并检查存在性
         EditorTeam team = checkTeamExist(id);
-        String bucketName = "team-" + team.getUuid();
+        String bucketName = "team-" + team.getId();
 
         try {
             // 2. 强制删除关联存储桶（带重试机制）
@@ -266,13 +263,11 @@ public class EditorTeamManagerServiceImpl
         List<Integer> originalIndices = new ArrayList<>();
         Date current = new Date();
 
-        // 1. 预处理 - 生成UUID并初始化时间
+        // 1. 预处理 - 初始化时间
         for (int i = 0; i < teams.size(); i++) {
             EditorTeam team = teams.get(i);
             team.setCreateAt(current);
 
-            // 生成唯一UUID（可根据业务需求调整生成规则）
-            team.setUuid(UUID.randomUUID().toString());
             validTeams.add(team);
             originalIndices.add(i);
         }
@@ -293,7 +288,7 @@ public class EditorTeamManagerServiceImpl
         // 3. 创建存储桶并处理失败
         List<Integer> toRemoveFromSuccess = new ArrayList<>();
         successTeams.forEach((originalIndex, team) -> {
-            String bucketName = "team-" + team.getUuid(); // 团队存储桶命名规则
+            String bucketName = "team-" + team.getId(); // 团队存储桶命名规则
             try {
                 // 检查存储桶是否存在
                 if (s3BucketService.bucketExists(bucketName)) {
@@ -376,7 +371,7 @@ public class EditorTeamManagerServiceImpl
         List<EditorTeam> teams = repository.selectByIdsWithLock(ids); // 悲观锁防止并发修改
 
         teams.parallelStream().forEach(team -> {
-            String bucketName = "team-" + team.getUuid();
+            String bucketName = "team-" + team.getId();
             try {
                 deleteBucketWithRetry(bucketName,3);
             } catch (Exception e) {

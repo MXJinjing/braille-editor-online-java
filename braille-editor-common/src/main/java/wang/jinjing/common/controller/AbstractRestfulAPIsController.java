@@ -10,17 +10,15 @@ import wang.jinjing.common.pojo.DTO.BaseDTO;
 import wang.jinjing.common.pojo.ErrorEnum;
 import wang.jinjing.common.pojo.VO.BaseVO;
 import wang.jinjing.common.pojo.VO.OperationResultVO;
-import wang.jinjing.common.pojo.VO.PageVO;
 import wang.jinjing.common.pojo.entity.BaseEntity;
 import wang.jinjing.common.repository.BaseRepository;
-import wang.jinjing.common.service.AbstractCRUDService;
 import wang.jinjing.common.service.BasicCRUDService;
 import wang.jinjing.common.util.BeanConvertUtil;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class RestfulAPIsController<
+public abstract class AbstractRestfulAPIsController<
             DTO extends BaseDTO,
             E extends BaseEntity,
             VO extends BaseVO,
@@ -31,7 +29,7 @@ public abstract class RestfulAPIsController<
     Class<E> eClass;
     Class<VO> voClass;
 
-    public RestfulAPIsController(S crudService) {
+    public AbstractRestfulAPIsController(S crudService) {
         this.crudService = crudService;
     }
 

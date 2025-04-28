@@ -10,8 +10,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import wang.jinjing.common.exception.ServiceException;
-import wang.jinjing.editor.exception.AuthServiceException;
-import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.VO.LoginResponseVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
 import wang.jinjing.common.pojo.ErrorEnum;
@@ -70,7 +68,7 @@ public class AuthServiceImpl implements AuthService {
 
             // 如果校验失败了
             if (Objects.isNull(authenticate)) {
-                throw new AuthServiceException("");
+                throw new ServiceException("");
             }
             EditorUser userDetails = (EditorUser) (authenticate.getPrincipal());
             // 自己生成jwt token给前端
@@ -128,7 +126,7 @@ public class AuthServiceImpl implements AuthService {
         authentication = authenticationManager.authenticate(authentication);
 
         if (Objects.isNull(authentication)) {
-            throw new AuthServiceException("用户名或密码错误");
+            throw new ServiceException("用户名或密码错误");
         } else {
             // 更新密码
             String encodePassword = passwordEncoder.encode(newPassword);
@@ -151,11 +149,11 @@ public class AuthServiceImpl implements AuthService {
         String emailCodeKey = "EMAIL_CODE_KEY:" + userId + "RESET_PASSWORD";
 
         if (!redisService.hasKey(emailCodeKey)) {
-            throw new AuthServiceException(ErrorEnum.EMAIL_CODE_EXPIRED);
+            throw new ServiceException(ErrorEnum.EMAIL_CODE_EXPIRED);
         } else{
             String code = redisService.get(emailCodeKey);
             if (!code.equals(emailCode)) {
-                throw new AuthServiceException(ErrorEnum.EMAIL_CODE_ERROR);
+                throw new ServiceException(ErrorEnum.EMAIL_CODE_ERROR);
             } else {
                 // 更新密码
                 String encodePassword = passwordEncoder.encode(newPassword);

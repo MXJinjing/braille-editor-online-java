@@ -8,9 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import wang.jinjing.editor.exception.AuthServiceException;
+import wang.jinjing.common.exception.ServiceException;
 import wang.jinjing.editor.exception.ObjectStorageException;
-import wang.jinjing.editor.exception.UserServiceException;
 import wang.jinjing.common.util.BeanConvertUtil;
 import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
@@ -54,14 +53,11 @@ public class EditorUserManageServiceImpl
     @Override
     @Transactional
     public long addOne(EditorUser editorUser) {
-        // 为用户分配UUID
-        editorUser.setUuid(UUID.randomUUID().toString());
-
         checkUserNotExist(editorUser);
 
         //检测用户是否为超级管理员
         if (editorUser.getSysRole().equals(SysRoleEnum.SUPER_ADMIN)) {
-            throw new UserServiceException(ErrorEnum.CHANGE_SUPER_ADMIN);
+            throw new ServiceException(ErrorEnum.CHANGE_SUPER_ADMIN);
         }
 
         // 加密密码数据
@@ -72,7 +68,7 @@ public class EditorUserManageServiceImpl
         long id = super.addOne(editorUser);
 
         if(id <= 0){
-            throw new UserServiceException(ErrorEnum.CREATE_FAIL);
+            throw new ServiceException(ErrorEnum.CREATE_FAIL);
         }
 
         return id;
@@ -99,7 +95,7 @@ public class EditorUserManageServiceImpl
     public EditorUserVO findById(Long id) {
         EditorUser editorUser = repository.selectById(id);
         if (Objects.isNull(editorUser)) {
-            throw new UserServiceException(ErrorEnum.USER_NOT_FOUND);
+            throw new ServiceException(ErrorEnum.USER_NOT_FOUND);
         }
         return BeanConvertUtil.convertToVo(voClass,editorUser);
     }
@@ -115,12 +111,12 @@ public class EditorUserManageServiceImpl
     public int updateOne(Long id, EditorUser editorUser) {
         // 检测ID和editorUser的ID是否一致
         if (editorUser.getId() != null && !Objects.equals(id, editorUser.getId())) {
-            throw new UserServiceException(ErrorEnum.UPDATE_ID_NOT_MATCH);
+            throw new ServiceException(ErrorEnum.UPDATE_ID_NOT_MATCH);
         }
         checkUserExist(id);
         // 检测用户是否修改为超级管理员
         if (SysRoleEnum.SUPER_ADMIN.equals(editorUser.getSysRole())) {
-            throw new UserServiceException(ErrorEnum.CHANGE_SUPER_ADMIN);
+            throw new ServiceException(ErrorEnum.CHANGE_SUPER_ADMIN);
         }
 
         if(editorUser.getPassword() == null){
@@ -144,7 +140,7 @@ public class EditorUserManageServiceImpl
     @Transactional
     public int deleteOne(Long id) {
         EditorUser user = checkUserExist(id);
-        String bucketName = "user-" + user.getUuid();
+        String bucketName = "user-" + user.getId();
 
         try {
             // 强制删除存储桶（忽略不存在情况）
@@ -153,14 +149,14 @@ public class EditorUserManageServiceImpl
             // 删除数据库记录
             int deletedCount = super.deleteOne(id);
             if (deletedCount <= 0) {
-                throw new UserServiceException(ErrorEnum.DELETE_FAIL);
+                throw new ServiceException(ErrorEnum.DELETE_FAIL);
             }
 
             return deletedCount;
-        } catch (UserServiceException e) {
+        } catch (ServiceException e) {
             throw e;
         } catch (Exception e) {
-            throw new UserServiceException(ErrorEnum.DELETE_FAIL, e);
+            throw new ServiceException(ErrorEnum.DELETE_FAIL, e);
         }
     }
 
@@ -179,7 +175,7 @@ public class EditorUserManageServiceImpl
             } catch (ObjectStorageException e) {
 
                 if (++attempt >= maxRetries) {
-                    throw new UserServiceException(ErrorEnum.BUCKET_DELETE_FAIL, e);
+                    throw new ServiceException(ErrorEnum.BUCKET_DELETE_FAIL, e);
                 }
 
                 log.warn("Bucket deletion failed, retrying... (attempt {}/{})", attempt, maxRetries);
@@ -246,8 +242,6 @@ public class EditorUserManageServiceImpl
                 continue;
             }
 
-            // 生成唯一UUID
-            user.setUuid(UUID.randomUUID().toString());
             validUsers.add(user);
             originalIndices.add(i);
         }
@@ -268,7 +262,7 @@ public class EditorUserManageServiceImpl
         // 创建存储桶并处理失败
         List<Integer> toRemoveFromSuccess = new ArrayList<>();
         successUsers.forEach((originalIndex, user) -> {
-            String bucketName = "user-" + user.getUuid();
+            String bucketName = "user-" + user.getId();
             try {
                 if (s3BucketService.bucketExists(bucketName)) {
                     throw new ObjectStorageException("Bucket already exists");
@@ -278,7 +272,7 @@ public class EditorUserManageServiceImpl
                 // 记录错误并标记需要删除用户
                 errorMap.put(originalIndex, ErrorEnum.BUCKET_CREATE_FAIL);
                 toRemoveFromSuccess.add(originalIndex);
-                log.error("Bucket creation failed for user {}: {}", user.getUuid(), e.getMessage());
+                log.error("Bucket creation failed for user {}: {}", user.getId(), e.getMessage());
             }
         });
 
@@ -289,7 +283,7 @@ public class EditorUserManageServiceImpl
                 repository.deleteById(user.getId());
                 successUsers.remove(originalIndex);
             } catch (Exception e) {
-                log.error("Failed to rollback user {}: {}", user.getUuid(), e.getMessage());
+                log.error("Failed to rollback user {}: {}", user.getId(), e.getMessage());
             }
         });
 
@@ -373,7 +367,7 @@ public class EditorUserManageServiceImpl
         users.parallelStream().forEach(user -> {
             if (!allowedIds.contains(user.getId())) return;
 
-            String bucketName = "user-" + user.getUuid();
+            String bucketName = "user-" + user.getId();
             try {
                 deleteBucketWithRetry(bucketName, 3); // 带重试的删除
             } catch (Exception e) {
@@ -460,26 +454,25 @@ public class EditorUserManageServiceImpl
     public int changePasswordNotCheck(Long userId, String newPassword) {
 //        PasswordFormatEnum passwordFormatEnum = PasswordFormatChecker.checkPasswordFormat(newPassword);
 //        if(passwordFormatEnum == PasswordFormatEnum.TOO_SHORT) {
-//            throw new AuthServiceException(ErrorEnum.PASSWORD_TOO_SHORT);
+//            throw new ServiceException(ErrorEnum.PASSWORD_TOO_SHORT);
 //        } else if(passwordFormatEnum == PasswordFormatEnum.TOO_LONG) {
-//            throw new AuthServiceException(ErrorEnum.PASSWORD_TOO_LONG);
+//            throw new ServiceException(ErrorEnum.PASSWORD_TOO_LONG);
 //        } else if(passwordFormatEnum == PasswordFormatEnum.TOO_WEAL) {
-//            throw new AuthServiceException(ErrorEnum.PASSWORD_TOO_WEAK);
+//            throw new ServiceException(ErrorEnum.PASSWORD_TOO_WEAK);
 //        } else if(passwordFormatEnum == PasswordFormatEnum.NOT_SUPPORTED) {
-//            throw new AuthServiceException(ErrorEnum.PASSWORD_NOT_SUPPORTED);
+//            throw new ServiceException(ErrorEnum.PASSWORD_NOT_SUPPORTED);
 //        }
         String encode = passwordEncoder.encode(newPassword);
         if(repository.updateSingle(userId, "password", encode) > 0) {
             return 1;
         } else {
-            throw new AuthServiceException(ErrorEnum.USER_NOT_FOUND);
+            throw new ServiceException(ErrorEnum.USER_NOT_FOUND);
         }
     }
 
     @Override
     public void initBucket(Long id) {
-        String uuid = repository.selectById(id).getUuid();
-        String bucketName = "user-" + uuid;
+        String bucketName = "user-" + repository.selectById(id).getId();
         baseFileService.initBucket(bucketName);
     }
 
@@ -488,11 +481,11 @@ public class EditorUserManageServiceImpl
     private void checkUserNotExist(EditorUser editorUser) {
         // 检测用户的ID是否已经存在
         if (editorUser.getId() != null && repository.existsById(editorUser.getId())) {
-            throw new UserServiceException(ErrorEnum.USER_ID_ALREADY_EXIST);
+            throw new ServiceException(ErrorEnum.USER_ID_ALREADY_EXIST);
         }
         // 检测用户的用户名是否已经存在
         else if (editorUser.getUsername() != null && repository.existsByUsername(editorUser.getUsername())){
-            throw new UserServiceException(ErrorEnum.USER_NAME_ALREADY_EXIST);
+            throw new ServiceException(ErrorEnum.USER_NAME_ALREADY_EXIST);
         }
     }
 
@@ -501,11 +494,11 @@ public class EditorUserManageServiceImpl
         // 检测用户的ID是否已经存在
         EditorUser editorUser = repository.selectByIdWithLock(id);
         if (Objects.isNull(editorUser)) {
-            throw new UserServiceException(ErrorEnum.USER_NOT_FOUND);
+            throw new ServiceException(ErrorEnum.USER_NOT_FOUND);
         } // 检测用户是否为超级管理员
         else {
             if (editorUser.getSysRole().equals(SysRoleEnum.SUPER_ADMIN)) {
-                throw new UserServiceException(ErrorEnum.CHANGE_SUPER_ADMIN);
+                throw new ServiceException(ErrorEnum.CHANGE_SUPER_ADMIN);
             }
         }
         return editorUser;

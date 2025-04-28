@@ -4,9 +4,8 @@ package wang.jinjing.editor.controller.manage;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import wang.jinjing.common.controller.RestfulAPIsController;
+import wang.jinjing.common.controller.AbstractRestfulAPIsController;
 import wang.jinjing.common.pojo.VO.OperationResultVO;
 import wang.jinjing.common.service.BasicCRUDService;
 import wang.jinjing.editor.pojo.DTO.EditorUserDTO;
@@ -21,13 +20,13 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/manage/user")
-public class EditorUserManageController extends RestfulAPIsController<
+public class EditorUserManageControllerAbstract extends AbstractRestfulAPIsController<
         EditorUserDTO,EditorUser, EditorUserVO, EditorUserRepository, BasicCRUDService<EditorUser,EditorUserVO>> {
 
     @Autowired
     private EditorUserManageService editorUserManageService;
 
-    public EditorUserManageController(BasicCRUDService<EditorUser,EditorUserVO> crudService) {
+    public EditorUserManageControllerAbstract(BasicCRUDService<EditorUser,EditorUserVO> crudService) {
         super(crudService);
         setClasses(EditorUser.class, EditorUserVO.class);
     }

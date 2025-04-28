@@ -3,9 +3,6 @@ package wang.jinjing.editor.controller.manage;
 
 import cn.hutool.core.io.resource.InputStreamResource;
 import cn.hutool.core.util.StrUtil;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -14,7 +11,6 @@ import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import wang.jinjing.common.controller.RestfulAPIsController;
 import wang.jinjing.common.pojo.FileTypeEnum;
 import wang.jinjing.editor.pojo.DTO.FileUploadBytesDTO;
 import wang.jinjing.editor.pojo.VO.FileBytesDownloadVO;
@@ -24,7 +20,7 @@ import wang.jinjing.editor.service.file.BaseFileService;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import static wang.jinjing.common.controller.RestfulAPIsController.getSortFromMap;
+import static wang.jinjing.common.controller.AbstractRestfulAPIsController.getSortFromMap;
 
 @RestController
 @RequestMapping("/api/manage/file")

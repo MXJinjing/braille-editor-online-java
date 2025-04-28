@@ -87,13 +87,10 @@ public class CaptchaServiceImpl implements CaptchaService {
         // 将redis的验证码与用户输入值进行匹配
         String s = redisService.get(verifyRedisKey);
 
+        // 强制单次有效性验证
         redisService.del(verifyRedisKey);
 
         // 如果验证码为空，返回false
-        if (StrUtil.isBlank(s)) {
-            return false;
-        }
-        // 如果验证码不匹配，返回false
-        return StrUtil.equals(captchaCode, s);
+        return s != null && s.equals(captchaCode);
     }
 }

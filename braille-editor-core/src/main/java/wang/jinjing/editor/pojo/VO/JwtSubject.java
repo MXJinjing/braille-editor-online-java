@@ -15,13 +15,10 @@ public class JwtSubject extends BaseVO {
 
     private String username;
 
-    private String nickname;
-
     private List<String> authorities;
 
-    public JwtSubject(String username, String nickname, Collection<? extends GrantedAuthority> authorities) {
+    public JwtSubject(String username, Collection<? extends GrantedAuthority> authorities) {
         this.username = username;
-        this.nickname = nickname;
         this.authorities = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();

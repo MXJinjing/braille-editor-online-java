@@ -29,7 +29,7 @@ public class UserFileServiceImpl extends AbstractUserService implements UserFile
 
     @NonNull
     private String getBucketName(){
-        String bucketName = "user-"+ getCurrentUser().getUuid();
+        String bucketName = "user-"+ getCurrentUser().getId();
         return bucketName;
     }
 

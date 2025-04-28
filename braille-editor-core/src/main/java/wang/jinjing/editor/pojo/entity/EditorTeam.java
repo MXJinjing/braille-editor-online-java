@@ -32,9 +32,6 @@ public class EditorTeam extends BaseEntity {
     @TableField("team_name")
     private String teamName;
 
-    @TableField("uuid")
-    private String uuid;
-
     @TableField("description")
     private String description;
 

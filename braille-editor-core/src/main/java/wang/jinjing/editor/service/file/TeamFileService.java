@@ -10,7 +10,7 @@ public interface TeamFileService {
 
     // filePath: end without '/'
     // folderPath: end with '/'
-    // team-bucket: "team-" + currentUser.getUUID()
+    // team-bucket: "team-" + currentUser.getId()
 
     void uploadFile(Long teamId, String path, MultipartFile file, boolean overwrite);
 

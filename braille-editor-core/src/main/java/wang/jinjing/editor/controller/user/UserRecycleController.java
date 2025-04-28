@@ -9,7 +9,7 @@ import wang.jinjing.editor.service.file.UserFileService;
 
 import java.util.List;
 
-import static wang.jinjing.common.controller.RestfulAPIsController.getSortFromMap;
+import static wang.jinjing.common.controller.AbstractRestfulAPIsController.getSortFromMap;
 
 @RestController
 @RequestMapping("/api/recycle")

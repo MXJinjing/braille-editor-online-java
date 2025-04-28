@@ -28,9 +28,6 @@ public class EditorUser extends BaseEntity implements UserDetails {
     @TableField("username")
     private String username;
 
-    @TableField("uuid")
-    private String uuid;
-
     @TableField("nickname")
     private String nickname;
 
@@ -114,14 +111,6 @@ public class EditorUser extends BaseEntity implements UserDetails {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public String getNickname() {

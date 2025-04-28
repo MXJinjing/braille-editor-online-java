@@ -13,7 +13,7 @@ public interface UserFileService {
 
     // filePath: end without '/'
     // folderPath: end with '/'
-    // user-bucket: "user-" + currentUser.getUUID()
+    // user-bucket: "user-" + currentUser.getId()
 
     OssFileMetadataVO uploadFile(String path, MultipartFile file);
 

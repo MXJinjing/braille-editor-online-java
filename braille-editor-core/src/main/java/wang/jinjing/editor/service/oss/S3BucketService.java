@@ -12,7 +12,6 @@ import java.util.List;
  */
 public interface S3BucketService {
 
-    // 桶操作
     void createBucket(String bucketName) throws ObjectStorageException;
 
     void deleteBucket(String bucketName) throws ObjectStorageException;

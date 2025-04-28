@@ -23,8 +23,6 @@ public class EditorTeamVO extends BaseVO {
 
     private String teamName;
 
-    private String uuid;
-
     private String description;
 
     private Long storageQuota;
