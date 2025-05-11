@@ -16,6 +16,7 @@ import wang.jinjing.editor.pojo.DTO.FileUploadBytesDTO;
 import wang.jinjing.editor.pojo.VO.FileBytesDownloadVO;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.service.file.BaseFileService;
+import wang.jinjing.editor.util.SecurityUtils;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -148,13 +149,13 @@ public class OssFileManageController {
     public ResponseEntity<?> mkDir(@RequestParam("bucket") String bucketName,
                                     @RequestParam String folderPath,
                                    @RequestParam String folderName){
-        return ResponseEntity.ok(baseFileService.mkDir(bucketName, folderPath, folderName));
+        return ResponseEntity.ok(baseFileService.mkDir(bucketName, folderPath, folderName,SecurityUtils.getCurrentUser().getId()));
     }
 
     @PostMapping("/mkdirs")
     public ResponseEntity<?> mkDirsWithParent(@RequestParam("bucket") String bucketName,
                                                @RequestParam String pathWithFolderName){
-        return ResponseEntity.ok(baseFileService.mkDirsWithParent(bucketName, pathWithFolderName));
+        return ResponseEntity.ok(baseFileService.mkDirsWithParent(bucketName, pathWithFolderName,SecurityUtils.getCurrentUser().getId()));
     }
 
     @PutMapping("/copy")
@@ -162,9 +163,9 @@ public class OssFileManageController {
                                         @RequestParam String sourcePath,
                                         @RequestParam String destBucket,
                                         @RequestParam String destPath,
-                                        @RequestParam(value = "overwrite", defaultValue = "false", required = false) Boolean overwrite){
-        baseFileService.copyFile(bucketName, sourcePath, destBucket, destPath, overwrite);
-        return ResponseEntity.ok().build();
+                                        @RequestParam(value = "r", defaultValue = "false", required = false) Boolean createParent){
+        OssFileMetadataVO ossFileMetadataVO = baseFileService.copyObject(bucketName, sourcePath, destBucket, destPath, createParent);
+        return ResponseEntity.ok(ossFileMetadataVO);
     }
 
 

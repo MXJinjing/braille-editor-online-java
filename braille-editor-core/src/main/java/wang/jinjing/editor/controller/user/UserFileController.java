@@ -152,16 +152,17 @@ public class UserFileController {
     public ResponseEntity<?> copyObject(
             @RequestParam("src") String srcPath,
             @RequestParam("dest") String destPath,
-            @RequestParam(defaultValue = "false",required = false) Boolean overwrite) {
-        OssFileMetadataVO ossFileMetadataVO = userFileService.copyObject(srcPath, destPath, overwrite);
+            @RequestParam(value = "r", defaultValue = "false",required = false) Boolean createParent) {
+        OssFileMetadataVO ossFileMetadataVO = userFileService.copyObject(srcPath, destPath, createParent);
         return ResponseEntity.ok().body(ossFileMetadataVO);
     }
 
     @PutMapping("/move")
     public ResponseEntity<?> moveObjectRename(
             @RequestParam("src") String srcPath,
-            @RequestParam("dest") String destPath) {
-        OssFileMetadataVO ossFileMetadataVO = userFileService.moveObjectRename(srcPath, destPath);
+            @RequestParam("dest") String destPath,
+            @RequestParam(required = false, value = "r", defaultValue = "false") Boolean createParent) {
+        OssFileMetadataVO ossFileMetadataVO = userFileService.moveObject(srcPath, destPath, createParent);
         return ResponseEntity.ok().body(ossFileMetadataVO);
     }
 

@@ -1,7 +1,9 @@
 package wang.jinjing.editor.service.impl.secure;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -9,18 +11,24 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import wang.jinjing.common.exception.ServiceException;
+import wang.jinjing.common.util.BeanConvertUtil;
+import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.VO.LoginResponseVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
 import wang.jinjing.common.pojo.ErrorEnum;
 import wang.jinjing.editor.repository.EditorUserRepository;
 import wang.jinjing.editor.repository.impl.EditorUserRepositoryImpl;
+import wang.jinjing.editor.service.file.BaseFileService;
+import wang.jinjing.editor.service.oss.S3BucketService;
 import wang.jinjing.editor.service.secure.AuthService;
 import wang.jinjing.editor.service.RedisService;
 import wang.jinjing.editor.util.JwtUtils;
 
 import java.util.Date;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -39,6 +47,9 @@ public class AuthServiceImpl implements AuthService {
     private RedisService redisService;
 
     @Autowired
+    private BaseFileService baseFileService;
+
+    @Autowired
     private JwtUtils jwtUtils;
 
     @Autowired
@@ -55,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Override
+    @Transactional
     public LoginResponseVO authenticateLogin(String username, String password) {
 
         // 使用ProviderManager auth方法进行验证
@@ -115,6 +127,7 @@ public class AuthServiceImpl implements AuthService {
      * @param oldPassword
      * @return
      */
+    @Transactional
     @Override
     public int changePassword(String username, String newPassword, String oldPassword) {
         // 使用AuthenticationManager进行密码验证
@@ -142,6 +155,7 @@ public class AuthServiceImpl implements AuthService {
      * @return
      */
     @Override
+    @Transactional
     public int resetPassword(String username, String newPassword, String emailCode) {
         EditorUser editorUser = (EditorUser) userDetailsService.loadUserByUsername(username);
         Long userId = editorUser.getId();
@@ -161,5 +175,43 @@ public class AuthServiceImpl implements AuthService {
             }
         }
     }
+
+    @Autowired
+    private ThreadPoolTaskExecutor customTaskExecutor;
+
+    @Override
+    @Transactional
+    public EditorUserVO registerUser(String username, String email, String password) {
+        // 检测用户名是否存在
+        EditorUser editorUser1 = repository.selectByUsername(username);
+        if(!Objects.isNull(editorUser1)){
+            throw new ServiceException(ErrorEnum.USER_NAME_ALREADY_EXIST);
+        }
+
+        String encodePassword = passwordEncoder.encode(password);
+
+        EditorUser editorUser = new EditorUser();
+        editorUser.setUsername(username);
+        editorUser.setNickname(username);
+        editorUser.setEmail(email);
+        editorUser.setPassword(encodePassword);
+
+        repository.insert(editorUser);
+
+        // 进行异步初始化桶
+        CompletableFuture.runAsync(() -> {
+            System.out.println("==进行异步初始化==");
+            baseFileService.initBucket("user-"+editorUser.getId(),editorUser);
+            System.out.println("==完成异步初始化==");
+        }, customTaskExecutor).exceptionally(ex -> {
+            System.err.println("初始化桶异常: " + ex.getCause().getMessage());
+            // 返回默认值或执行补偿逻辑
+            return null;
+        });
+
+        EditorUserVO editorUserVO = BeanConvertUtil.convertToVo(EditorUserVO.class,editorUser);
+        return editorUserVO;
+    }
+
 
 }

@@ -46,9 +46,9 @@ public interface UserFileService {
 
     void initBucket();
 
-    OssFileMetadataVO moveObjectRename(String srcPath, String destPath);
+    OssFileMetadataVO moveObject(String srcPath, String destPath, boolean createParent);
 
-    OssFileMetadataVO copyObject(String sourcePath, String destPath, boolean overwrite);
+    OssFileMetadataVO copyObject(String sourcePath, String destPath, boolean createParent);
 
     List<OssRecycleMetadataVO> listRecycleFiles(Sort sort);
 

@@ -91,7 +91,6 @@ public class TestController {
     private OssFileMetadataVO createFolder(Long id, String name, String bucket, String key,
                                            Long createBy, String createByUsername) {
         OssFileMetadataVO folder = new OssFileMetadataVO();
-        folder.setId(id);
         folder.setRealFileName(name);
         folder.setPath(key);
         folder.setIsDir(true);
@@ -115,7 +114,6 @@ public class TestController {
                                              Long createBy, String createByUsername,
                                              Long lastUpdateBy, String lastUpdateByUsername) {
         OssFileMetadataVO file = new OssFileMetadataVO();
-        file.setId(id);
         file.setRealFileName(name);
         file.setPath(key);
         file.setIsDir(false);

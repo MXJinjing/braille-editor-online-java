@@ -16,7 +16,6 @@ import wang.jinjing.common.pojo.ErrorEnum;
 import wang.jinjing.common.pojo.FileTypeEnum;
 import wang.jinjing.common.util.BeanConvertUtil;
 import wang.jinjing.editor.exception.ObjectStorageException;
-import wang.jinjing.editor.pojo.VO.LocalMultipartFile;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.pojo.VO.OssRecycleMetadataVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
@@ -114,6 +113,11 @@ public class BaseFileServiceImpl implements BaseFileService {
         }
     }
 
+    private void checkBucketExists(String bucketName) {
+        if (!s3BucketService.bucketExists(bucketName)) {
+            throw new ServiceException(ErrorEnum.USER_BUCKET_NOT_INIT);
+        }
+    }
 
 
     @Override
@@ -126,6 +130,9 @@ public class BaseFileServiceImpl implements BaseFileService {
                                           String createByUsername, String lastModifiedByUsername,
                                           String mimeType,
                                           Integer page, Integer size, Sort sort) {
+        // 1. 检查存储桶是否存在
+        checkBucketExists(bucket);
+
         Long createBy = null;
         Long lastModifiedBy = null;
         if(StrUtil.isNotBlank(createByUsername)){
@@ -133,11 +140,6 @@ public class BaseFileServiceImpl implements BaseFileService {
         }
         if(StrUtil.isNotBlank(lastModifiedByUsername)){
             lastModifiedBy = ((EditorUser) userDetailService.loadUserByUsername(lastModifiedByUsername)).getId();
-        }
-
-        // 1. 检查存储桶是否存在
-        if (!s3BucketService.bucketExists(bucket)) {
-            throw new ServiceException(ErrorEnum.BUCKET_NOT_EXIST);
         }
 
         Page<OssFileMetadata> entities = metadataRepository.searchPage(
@@ -167,10 +169,9 @@ public class BaseFileServiceImpl implements BaseFileService {
     @Transactional
     @Override
     public OssFileMetadataVO uploadFile(@NotBlank String bucketName, @NotBlank String path, @NotNull MultipartFile file) {
+
         // 检测桶是否存在
-        if (!s3BucketService.bucketExists(bucketName)) {
-            throw new ServiceException(ErrorEnum.USER_BUCKET_NOT_INIT);
-        }
+        checkBucketExists(bucketName);
 
         try {
             InputStream inputStream = file.getInputStream();
@@ -188,7 +189,7 @@ public class BaseFileServiceImpl implements BaseFileService {
             Map<String, String> userMetadata = getUserMetadataMap(currentUser, fileHash);
 
             // 3. 检查并创建父目录
-            mkDirsWithParent(bucketName, path);
+            mkDirsWithParent(bucketName, path,currentUser.getId());
             String fullPath = normalizePath(path + "/" + file.getOriginalFilename());
             String realFileName = file.getOriginalFilename();
 
@@ -238,9 +239,7 @@ public class BaseFileServiceImpl implements BaseFileService {
     @Override
     public OssFileMetadataVO updateFile(String bucketName, String path, MultipartFile file) {
         // 检测桶是否存在
-        if (!s3BucketService.bucketExists(bucketName)) {
-            throw new ServiceException(ErrorEnum.USER_BUCKET_NOT_INIT);
-        }
+        checkBucketExists(bucketName);
         path = normalizePath(path);
 
         // 获取文件元信息
@@ -327,7 +326,7 @@ public class BaseFileServiceImpl implements BaseFileService {
             Map<String, String> userMetadata = getUserMetadataMap(currentUser, fileHash);
 
             // 3. 检查并创建父目录
-            mkDirsWithParent(bucketName, path);
+            mkDirsWithParent(bucketName, path, currentUser.getId());
 
             String fullPath = normalizePath(path + "/" + fileName);
             String realFileName = fileName;
@@ -410,9 +409,7 @@ public class BaseFileServiceImpl implements BaseFileService {
     @Transactional
     public OssFileMetadataVO getMetadataByPath(String bucketName, String filePath, FileTypeEnum file) {
         filePath = normalizePath(filePath);
-        if (!s3BucketService.bucketExists(bucketName)) {
-            throw new ServiceException(ErrorEnum.BUCKET_NOT_EXIST);
-        }
+        checkBucketExists(bucketName);
 
         OssFileMetadata metadata = metadataRepository.selectByPath(bucketName, filePath, FileTypeEnum.ALL);
         if (metadata == null) {
@@ -449,9 +446,7 @@ public class BaseFileServiceImpl implements BaseFileService {
         String path = normalizePath(folderPath);
 
         // 检测桶是否存在
-        if (!s3BucketService.bucketExists(bucketName)) {
-            throw new ServiceException(ErrorEnum.USER_BUCKET_NOT_INIT);
-        }
+        checkBucketExists(bucketName);
 
         // 检测路径是否存在
         if (!metadataRepository.existsByPath(bucketName, path, FileTypeEnum.FOLDER)) {
@@ -489,10 +484,7 @@ public class BaseFileServiceImpl implements BaseFileService {
         String path = normalizePath(folderPath);
 
         // 检测桶是否存在
-        if (!s3BucketService.bucketExists(bucketName)) {
-            throw new ServiceException(ErrorEnum.USER_BUCKET_NOT_INIT);
-        }
-
+        checkBucketExists(bucketName);
 
         Page<OssFileMetadata> metadataList = metadataRepository.listPageByPath(bucketName, path, new Page<>(page,size), sort);
 
@@ -533,47 +525,12 @@ public class BaseFileServiceImpl implements BaseFileService {
 
     @Override
     public void realDeleteFiles(String bucketName, Long deleteId) {
-//        Map<Long, ErrorEnum> errorMap = new ConcurrentHashMap<>();
-//
-//        deleteIds.parallelStream().forEach(deleteId -> {
-//            try {
-//                OssFileRecycle recycle = ofrRepository.selectById(deleteId);
-//                if (recycle == null) {
-//                    errorMap.put(deleteId, ErrorEnum.RECYCLE_RECORD_NOT_FOUND);
-//                    return;
-//                }
-//
-//                // 获取元数据并验证
-//                OssFileMetadata metadata = ofmRepository.selectById(recycle.getOriginFileId());
-//                if (metadata == null || !metadata.getS3Bucket().equals(bucketName)) {
-//                    errorMap.put(deleteId, ErrorEnum.FILE_METADATA_NOT_FOUND);
-//                    return;
-//                }
-//
-//                // 物理删除存储对象
-//                if (metadata.getIsDir()) {
-//                    List<String> objects = ofmRepository.listByPath(bucketName, metadata.getS3Key(), Sort.unsorted())
-//                            .stream().map(OssFileMetadata::getS3Key).toList();
-//                    objects.forEach(obj -> deleteObjectFromS3(bucketName, obj));
-//                } else {
-//                    deleteObjectFromS3(bucketName, metadata.getS3Key());
-//                }
-//
-//                // 删除元数据
-//                ofmRepository.deleteById(metadata.getId());
-//                // 删除回收站记录
-//                ofrRepository.deleteById(deleteId);
-//
-//            } catch (Exception e) {
-//                errorMap.put(deleteId, ErrorEnum.DELETE_FAIL);
-//            }
-//        });
-//        return errorMap;
+
     }
 
-    @Override
     @Transactional
-    public long mkDir(String bucketName, String folderPath, String folderName) {
+    @Override
+    public long mkDir(String bucketName, String folderPath, String folderName, Long currentUserId) {
         String newFolderPath = normalizePath(folderPath + "/" + folderName);
         Date currentTime = new Date();
 
@@ -585,7 +542,7 @@ public class BaseFileServiceImpl implements BaseFileService {
 
         // 如果路径是根目录，直接获取根目录的ID
         if(Objects.equals(folderPath, "/") && Objects.equals(folderName, "")){
-            return createRootFolder(bucketName);
+            return createRootFolder(bucketName,currentUserId);
         }else{
             // 如果路径不是根目录，检查父目录是否存在
             parentDir = metadataRepository.selectByPath(bucketName, folderPath, FileTypeEnum.FOLDER);
@@ -597,7 +554,6 @@ public class BaseFileServiceImpl implements BaseFileService {
 
         String s3Key = getGeneratedS3KeyFromPath(bucketName, folderPath, folderName);
 
-        EditorUser currentUser = SecurityUtils.getCurrentUser();
         OssFileMetadata newFolder = OssFileMetadata.builder()
                 .path(newFolderPath)
                 .s3Bucket(bucketName)
@@ -605,8 +561,8 @@ public class BaseFileServiceImpl implements BaseFileService {
                 .createAt(currentTime)
                 .lastModifiedAt(currentTime)
                 .isDir(true)
-                .createBy(currentUser.getId())
-                .lastModifiedBy(currentUser.getId())
+                .createBy(currentUserId)
+                .lastModifiedBy(currentUserId)
                 .realFileName(folderName)
                 .mimeType("application/x-directory")
                 .parentPath(Objects.isNull(parentDir)?"":folderPath)
@@ -616,8 +572,7 @@ public class BaseFileServiceImpl implements BaseFileService {
         return newFolder.getId();
     }
 
-    protected long createRootFolder(String bucket){
-        EditorUser currentUser = SecurityUtils.getCurrentUser();
+    protected long createRootFolder(String bucket,Long userId) {
         Date currentTime  = new Date();
         OssFileMetadata rootFolder = OssFileMetadata.builder()
                 .s3Bucket(bucket)
@@ -625,8 +580,8 @@ public class BaseFileServiceImpl implements BaseFileService {
                 .path("/")
                 .isDir(true)
                 .realFileName("")
-                .createBy(currentUser.getId())
-                .lastModifiedBy(currentUser.getId())
+                .createBy(userId)
+                .lastModifiedBy(userId)
                 .createAt(currentTime)
                 .lastModifiedAt(currentTime)
                 .mimeType("application/x-directory")
@@ -639,7 +594,7 @@ public class BaseFileServiceImpl implements BaseFileService {
 
     @Override
     @Transactional
-    public long mkDirsWithParent(String bucketName, String pathWithFolderName) {
+    public long mkDirsWithParent(String bucketName, String pathWithFolderName, Long currentUserId) {
         List<String> segments = getPathSegments(pathWithFolderName);
         ArrayDeque<String> parentToCreate = new ArrayDeque<>();
         Long lastPathId = 0L;
@@ -648,7 +603,7 @@ public class BaseFileServiceImpl implements BaseFileService {
             // 寻找根目录
             OssFileMetadata root = metadataRepository.selectByPath(bucketName,"/",FileTypeEnum.FOLDER);
             if(root == null){
-                mkDir(bucketName,"/","");
+                mkDir(bucketName,"/","", currentUserId);
             }
         }
 
@@ -671,14 +626,64 @@ public class BaseFileServiceImpl implements BaseFileService {
         while(!parentToCreate.isEmpty()){
             String pathToCreate = parentToCreate.pop();
             List<String> pathSegments = getPathSegments(pathToCreate);
-            lastPathId = mkDir(bucketName, getParentPath(pathSegments,1), getRealName(pathSegments) );
+            lastPathId = mkDir(bucketName, getParentPath(pathSegments,1), getRealName(pathSegments), currentUserId);
         }
         return lastPathId;
     }
 
     @Transactional
     @Override
-    public OssFileMetadataVO moveObjectRename(String bucketName, String srcPath, String destPath) {
+    public OssFileMetadataVO moveObject(String bucketName, String srcPath, String destBucketName, String destPath, boolean createParent) {
+        try {
+
+            // 假如移动到同一个文件夹
+            if(getParentPath(srcPath).equals(destPath)){
+                throw  new ServiceException(ErrorEnum.FILE_MOVE_NO_OPERATION);
+            }
+            // 规范化路径
+            srcPath = normalizePath(srcPath);
+            destPath = normalizePath(destPath);
+            Long userId = SecurityUtils.getCurrentUser().getId();
+
+            // 1. 校验源数据
+            OssFileMetadata srcMeta = metadataRepository.selectByPath(bucketName, srcPath, FileTypeEnum.ALL);
+            if (srcMeta == null) {
+                throw new ServiceException("源文件不存在", ErrorEnum.FILE_METADATA_NOT_FOUND);
+            }
+
+            // 2. 处理目标路径
+            OssFileMetadata destMetaIfExists = metadataRepository.selectByPath(bucketName, destPath, FileTypeEnum.ALL);
+            if (destMetaIfExists != null) {
+                // 目标存在且是文件时抛出异常
+                if (!destMetaIfExists.getIsDir()) {
+                    throw new ServiceException(destPath + " 不是目录", ErrorEnum.DEST_FILE_TYPE_CONFLICT);
+                }
+            } else {
+                // 创建目标目录（包括父目录）
+                if(createParent){
+                    mkDirsWithParent(destBucketName, destPath, userId);
+                }else{
+                    throw new ServiceException("目标目录不存在", ErrorEnum.DEST_FILE_TYPE_CONFLICT);
+                }
+            }
+
+            // 3. 执行移动操作
+            OssFileMetadataVO destMeta = new OssFileMetadataVO();
+            if (srcMeta.getIsDir()) {
+                destMeta = moveDirectory(bucketName, srcMeta, destBucketName, destPath, userId);
+            } else {
+                destMeta = moveSingleFile(bucketName, srcMeta, destBucketName, destPath, userId);
+            }
+
+            return destMeta;
+        } catch (ObjectStorageException e) {
+            throw new ServiceException(ErrorEnum.FILE_MOVE_FAIL);
+        }
+    }
+
+    @Transactional
+    @Override
+    public OssFileMetadataVO copyObject(String bucketName, String srcPath, String destBucketName, String destPath, boolean createParent) {
         try {
             // 规范化路径
             srcPath = normalizePath(srcPath);
@@ -700,36 +705,104 @@ public class BaseFileServiceImpl implements BaseFileService {
                 }
             } else {
                 // 创建目标目录（包括父目录）
-                mkDirsWithParent(bucketName, destPath);
+                if(createParent){
+                    mkDirsWithParent(destBucketName, destPath, userId);
+                }else{
+                    throw new ServiceException("目标目录不存在", ErrorEnum.DEST_FILE_TYPE_CONFLICT);
+                }
             }
 
             // 3. 执行移动操作
             OssFileMetadataVO destMeta = new OssFileMetadataVO();
             if (srcMeta.getIsDir()) {
-                destMeta = moveDirectory(bucketName, srcMeta, destPath, userId);
+                destMeta = copyDirectory(bucketName, srcMeta, destBucketName, destPath, userId);
             } else {
-                destMeta = moveSingleFile(bucketName, srcMeta, destPath, userId);
+                destMeta = copySingleFile(bucketName, srcMeta, destBucketName, destPath, userId);
             }
 
             return destMeta;
         } catch (ObjectStorageException e) {
-            throw new ServiceException(ErrorEnum.FILE_MOVE_FAIL);
+            throw new ServiceException(ErrorEnum.FILE_COPY_FAIL);
         }
     }
 
     @Transactional
-    protected OssFileMetadataVO moveDirectory(String bucketName, OssFileMetadata srcDirMeta,
+    protected OssFileMetadataVO moveDirectory(String bucketName, OssFileMetadata srcDirMeta, String destBucketName,
                                String destPath, Long userId) {
+
         // 生成新目录路径
         String basePath = normalizePath(destPath + "/" + srcDirMeta.getRealFileName());
-        String newDirPath = generateUniquePath(bucketName, basePath,true);
+        String newDirPath = generateUniquePath(destBucketName, basePath,true);
         String newDirName = newDirPath.substring(newDirPath.lastIndexOf("/")+1);
-        String newDirS3Key = getGeneratedS3KeyFromPath(bucketName, destPath, newDirName);
+        String newDirS3Key = getGeneratedS3KeyFromPath(destBucketName, destPath, newDirName);
 
         // 创建目标目录元数据
         Date currentTime = new Date();
         OssFileMetadata newDirMeta = OssFileMetadata.builder()
-                .s3Bucket(bucketName)
+                .s3Bucket(destBucketName)
+                .s3Key(newDirS3Key)
+                .path(newDirPath)
+                .realFileName(newDirName)
+                .isDir(true)
+                .mimeType("application/x-directory")
+                .parentPath(normalizePath(destPath))
+                .createAt(currentTime) // 使用当前时间作为创建时间.createBy(userId)
+                .createBy(userId)
+                .lastModifiedAt(currentTime).lastModifiedBy(userId)
+                .build();
+        metadataRepository.insert(newDirMeta);
+
+        // 广度优先遍历原目录
+        Deque<Pair<String, String>> pathQueue = new ArrayDeque<>();
+        pathQueue.push(Pair.of(srcDirMeta.getPath(), newDirPath));
+
+        while (!pathQueue.isEmpty()) {
+            Pair<String, String> paths = pathQueue.pop();
+            String currentSrcPath = paths.getFirst();
+            String currentDestPath = paths.getSecond();
+
+            OssFileMetadata currentSrcFolder = metadataRepository.selectByPath(bucketName, currentSrcPath, FileTypeEnum.FOLDER);
+            List<OssFileMetadata> children = metadataRepository.listByPath(bucketName, currentSrcPath, Sort.unsorted());
+
+            // 处理文件
+            children.stream()
+                    .filter(m -> !m.getIsDir())
+                    .forEach(file -> moveSingleFile(bucketName, file, destBucketName, currentDestPath, userId));
+
+            // 处理子目录
+            children.stream()
+                    .filter(OssFileMetadata::getIsDir)
+                    .forEach(dir -> {
+                        String childDestPath = currentDestPath + "/" + dir.getRealFileName();
+                        mkDir(destBucketName, currentDestPath, dir.getRealFileName(),userId);
+                        pathQueue.push(Pair.of(dir.getPath(), childDestPath));
+                    });
+
+            // 最后删除自己
+            metadataRepository.deleteById(currentSrcFolder);
+        }
+
+        // 删除原目录元数据
+        metadataRepository.deleteById(srcDirMeta.getId());
+        OssFileMetadataVO ossFileMetadataVO = BeanConvertUtil.convertToVo(OssFileMetadataVO.class, newDirMeta);
+        Map<Long, String> userMap = getUserMap(Collections.singletonList(newDirMeta));
+        fillVoUserName(userMap, ossFileMetadataVO);
+        return ossFileMetadataVO;
+    }
+
+    @Transactional
+    protected OssFileMetadataVO copyDirectory(String bucketName, OssFileMetadata srcDirMeta, String destBucketName,
+                                              String destPath, Long userId) {
+        // 生成新目录路径
+        String basePath = normalizePath(destPath + "/" + srcDirMeta.getRealFileName());
+        String newDirPath = generateUniquePath(destBucketName, basePath,true);
+        String newDirName = newDirPath.substring(newDirPath.lastIndexOf("/")+1);
+        String newDirS3Key = getGeneratedS3KeyFromPath(destBucketName, destPath, newDirName);
+
+        // 创建目标目录元数据
+        Date currentTime = new Date();
+        OssFileMetadata newDirMeta = OssFileMetadata.builder()
+                .s3Bucket(destBucketName)
                 .s3Key(newDirS3Key)
                 .path(newDirPath)
                 .realFileName(newDirName)
@@ -756,14 +829,14 @@ public class BaseFileServiceImpl implements BaseFileService {
             // 处理文件
             children.stream()
                     .filter(m -> !m.getIsDir())
-                    .forEach(file -> moveSingleFile(bucketName, file, currentDestPath, userId));
+                    .forEach(file -> copySingleFile(bucketName, file, destBucketName, currentDestPath, userId));
 
             // 处理子目录
             children.stream()
                     .filter(OssFileMetadata::getIsDir)
                     .forEach(dir -> {
                         String childDestPath = currentDestPath + "/" + dir.getRealFileName();
-                        mkDir(bucketName, currentDestPath, dir.getRealFileName());
+                        mkDir(destBucketName, currentDestPath, dir.getRealFileName(),userId);
                         pathQueue.push(Pair.of(dir.getPath(), childDestPath));
                     });
         }
@@ -777,22 +850,27 @@ public class BaseFileServiceImpl implements BaseFileService {
     }
 
     @Transactional
-    protected OssFileMetadataVO moveSingleFile(String bucketName, OssFileMetadata srcFileMeta,
+    protected OssFileMetadataVO moveSingleFile(String bucketName, OssFileMetadata srcFileMeta, String destBucketName,
                                 String destDirPath, Long createdBy) {
+        // 构造新文件的元数据
         String destFileName = srcFileMeta.getRealFileName();
         String destFilePath = normalizePath(destDirPath + "/" + destFileName);
-        destFilePath = resolveDuplicatePath(bucketName, destFilePath);
+
+        // 解决文件名冲突问题
+        destFilePath = resolveDuplicatePath(destBucketName, destFilePath);
         String destFileRealname = destFilePath.substring(destFilePath.lastIndexOf("/") + 1);
 
-        String destS3Key = getGeneratedS3KeyFromPath(bucketName,destDirPath, destFileRealname);
+        String destS3Key = getGeneratedS3KeyFromPath(destBucketName,destDirPath, destFileRealname);
 
-        s3ObjectService.copyObject(bucketName, srcFileMeta.getS3Key(),
-                bucketName, destFilePath);
-        s3ObjectService.deleteObject(bucketName, srcFileMeta.getS3Key());
+        // 在对象存储中拷贝文件
+        s3ObjectService.copyObject(bucketName, srcFileMeta.getS3Key(), destBucketName, destS3Key);
 
-        OssFileMetadata destMeta = buildDestMetadata(bucketName, destFilePath, destS3Key, srcFileMeta, createdBy);
+        // 插入新的文件元数据
+        OssFileMetadata destMeta = buildDestMetadata(destBucketName, destFilePath, destS3Key, srcFileMeta, createdBy);
         metadataRepository.insert(destMeta);
 
+        // 最后删除自己
+        s3ObjectService.deleteObject(bucketName, srcFileMeta.getS3Key());
         metadataRepository.deleteById(srcFileMeta.getId());
 
         OssFileMetadataVO ossFileMetadataVO = BeanConvertUtil.convertToVo(OssFileMetadataVO.class, destMeta);
@@ -804,16 +882,20 @@ public class BaseFileServiceImpl implements BaseFileService {
     @Transactional
     protected OssFileMetadataVO copySingleFile(String bucketName, OssFileMetadata srcFileMeta, String destBucketName,
                                              String destDirPath, Long createdBy){
+        // 构造新文件的元数据
         String destFileName = srcFileMeta.getRealFileName();
         String destFilePath = normalizePath(destDirPath + "/" + destFileName);
-        destFilePath = resolveDuplicatePath(bucketName, destFilePath);
+
+        // 解决文件名冲突问题
+        destFilePath = resolveDuplicatePath(destBucketName, destFilePath);
         String destFileRealname = destFilePath.substring(destFilePath.lastIndexOf("/") + 1);
 
-        String destS3Key = getGeneratedS3KeyFromPath(bucketName,destDirPath, destFileRealname);
+        String destS3Key = getGeneratedS3KeyFromPath(destBucketName,destDirPath, destFileRealname);
 
-        s3ObjectService.copyObject(bucketName, srcFileMeta.getS3Key(),
-                destBucketName, destFilePath);
+        // 在对象存储中拷贝文件
+        s3ObjectService.copyObject(bucketName, srcFileMeta.getS3Key(), destBucketName, destFilePath);
 
+        // 插入新的文件元数据
         OssFileMetadata destMeta = buildDestMetadata(destBucketName, destFilePath, destS3Key, srcFileMeta, createdBy);
         metadataRepository.insert(destMeta);
 
@@ -849,23 +931,15 @@ public class BaseFileServiceImpl implements BaseFileService {
         return generateUniquePath(bucketName, originalPath, false);
     }
 
-    @Override
-    @Transactional
-    public OssFileMetadataVO copyFile(String sourceBucket, String sourcePath,
-                                      String destBucket, String destPath,
-                                      boolean overwrite) {
-        return new OssFileMetadataVO();
-    }
 
-    @Override
     @Transactional
-    public void initBucket(String bucketName) {
+    @Override
+    public void initBucket(String bucketName, EditorUser currentUser) {
         if(!s3BucketService.bucketExists(bucketName)) {
             try {
-                EditorUser currentUser = SecurityUtils.getCurrentUser();
                 s3BucketService.createBucket(bucketName);
                 // 为数据库表添加根目录
-                mkDir(bucketName,"/","");
+                mkDir(bucketName,"/","",currentUser.getId());
                 if(!bucketName.equals("init-bucket")){
 //                    OssFileMetadata metadataByPath = metadataRepository.selectByPath("init-bucket", "/欢迎使用.html", FileTypeEnum.FILE);
 //                    copySingleFile("init-bucket", metadataByPath, bucketName, "/" ,currentUser.getId());
@@ -882,6 +956,7 @@ public class BaseFileServiceImpl implements BaseFileService {
 
         }
     }
+
 
     @Override
     @Transactional
@@ -939,9 +1014,7 @@ public class BaseFileServiceImpl implements BaseFileService {
         List<OssRecycleMetadataVO> list = new ArrayList<>();
 
         // 检测桶是否存在
-        if (!s3BucketService.bucketExists(bucketName)) {
-            throw new ServiceException(ErrorEnum.USER_BUCKET_NOT_INIT);
-        }
+        checkBucketExists(bucketName);
 
         List<OssFileMetadata> metadataList = metadataRepository.listSoftDeleteItems(bucketName, sort);
 

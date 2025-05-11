@@ -13,6 +13,7 @@ import wang.jinjing.editor.service.AbstractUserService;
 import wang.jinjing.editor.service.file.BaseFileService;
 import wang.jinjing.editor.service.file.UserFileService;
 import wang.jinjing.editor.service.oss.S3BucketService;
+import wang.jinjing.editor.util.SecurityUtils;
 
 import java.io.InputStream;
 import java.util.Date;
@@ -91,29 +92,31 @@ public class UserFileServiceImpl extends AbstractUserService implements UserFile
 
     @Override
     public void mkDir(String folderPath, String folderName) {
-        baseFileService.mkDir(getBucketName(),folderPath, folderName);
+        baseFileService.mkDir(getBucketName(),folderPath, folderName,getCurrentUser().getId());
     }
 
     @Override
     public void mkDirsWithParent(String pathWithFolderName) {
-        baseFileService.mkDirsWithParent(getBucketName(),pathWithFolderName);
+        baseFileService.mkDirsWithParent(getBucketName(),pathWithFolderName,getCurrentUser().getId());
     }
 
     @Override
     public void initBucket() {
-        baseFileService.initBucket(getBucketName());
+        baseFileService.initBucket(getBucketName(), SecurityUtils.getCurrentUser());
     }
 
     @Override
-    public OssFileMetadataVO moveObjectRename(String srcPath, String destPath) {
-        return baseFileService.moveObjectRename(getBucketName(),srcPath,destPath);
-    }
-
-    @Override
-    public OssFileMetadataVO copyObject(String sourcePath, String destPath, boolean overwrite){
+    public OssFileMetadataVO moveObject(String srcPath, String destPath, boolean createParent) {
         String bucketName = getBucketName();
-        return baseFileService.copyFile(bucketName, sourcePath, bucketName, destPath, overwrite);
+        return baseFileService.moveObject(bucketName, srcPath, bucketName, destPath, createParent );
     }
+
+    @Override
+    public OssFileMetadataVO copyObject(String srcPath, String destPath, boolean createParent) {
+        String bucketName = getBucketName();
+        return baseFileService.copyObject(bucketName, srcPath, bucketName, destPath, createParent);
+    }
+
 
     @Override
     public List<OssRecycleMetadataVO> listRecycleFiles(Sort sort) {

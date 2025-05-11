@@ -9,6 +9,7 @@ import wang.jinjing.editor.pojo.entity.OssFileMetadata;
 import wang.jinjing.editor.repository.OssFileMetadataRepository;
 import wang.jinjing.editor.service.file.BaseFileService;
 import wang.jinjing.editor.service.oss.S3BucketService;
+import wang.jinjing.editor.util.SecurityUtils;
 
 @RestController
 @RequestMapping("/api/manage/bucket")
@@ -33,7 +34,7 @@ public class OssBucketManageController {
 
     @GetMapping("/{bucketName}/init")
     public ResponseEntity<?> initBucket(@PathVariable String bucketName) {
-        baseFileService.initBucket(bucketName);
+        baseFileService.initBucket(bucketName, SecurityUtils.getCurrentUser());
         return ResponseEntity.ok().build();
     }
 

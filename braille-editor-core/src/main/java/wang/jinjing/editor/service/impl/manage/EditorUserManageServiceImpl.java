@@ -20,6 +20,7 @@ import wang.jinjing.common.service.AbstractCRUDService;
 import wang.jinjing.editor.service.file.BaseFileService;
 import wang.jinjing.editor.service.manage.EditorUserManageService;
 import wang.jinjing.editor.service.oss.S3BucketService;
+import wang.jinjing.editor.util.SecurityUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -473,7 +474,7 @@ public class EditorUserManageServiceImpl
     @Override
     public void initBucket(Long id) {
         String bucketName = "user-" + repository.selectById(id).getId();
-        baseFileService.initBucket(bucketName);
+        baseFileService.initBucket(bucketName, SecurityUtils.getCurrentUser());
     }
 
     // ===== 私有方法 =====

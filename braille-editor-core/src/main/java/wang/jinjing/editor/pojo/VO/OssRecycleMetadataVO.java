@@ -15,8 +15,6 @@ import java.util.Date;
 @NoArgsConstructor
 public class OssRecycleMetadataVO extends BaseVO {
 
-    private Long id;
-
     private String realFileName;
 
     private String path;

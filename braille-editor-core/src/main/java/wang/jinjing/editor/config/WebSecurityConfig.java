@@ -44,12 +44,12 @@ public class WebSecurityConfig {
     };
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 // 禁用 CSRF（适用于无状态 API）
                 .csrf(AbstractHttpConfigurer::disable)
 
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 // 配置会话管理为无状态
                 .sessionManagement(session -> session
@@ -95,15 +95,15 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:8080","http://127.0.0.1:8080","http://localhost:9090","http://127.0.0.1:9090")); // 允许前端地址
-        configuration.setAllowedMethods(List.of("*")); // 允许的HTTP方法
-        configuration.setAllowedHeaders(List.of("*")); // 允许所有请求头
-        configuration.setAllowCredentials(true); // 允许携带凭证（与前端withCredentials: true配合）
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(List.of(corsProperties.getAllowedMethods().split(",")));
+        configuration.setAllowedHeaders(List.of(corsProperties.getAllowedHeaders().split(",")));
+        configuration.setAllowCredentials(corsProperties.isAllowCredentials());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // 对所有路径生效
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 

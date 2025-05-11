@@ -5,10 +5,12 @@ import jakarta.validation.constraints.NotBlank;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import wang.jinjing.common.pojo.FileTypeEnum;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.pojo.VO.OssRecycleMetadataVO;
+import wang.jinjing.editor.pojo.entity.EditorUser;
 
 import java.io.InputStream;
 import java.util.Date;
@@ -51,17 +53,15 @@ public interface BaseFileService {
 
     void realDeleteFiles(String bucketName, Long deleteId);
 
-    long mkDir(String bucketName, String folderPath, String folderName);
+    long mkDirsWithParent(String bucketName, String pathWithFolderName, Long currentUserId);
 
-    long mkDirsWithParent(String bucketName, String pathWithFolderName);
+    long mkDir(String bucketName, String folderPath, String folderName, Long currentUserId);
 
-    OssFileMetadataVO moveObjectRename(String bucketName, String srcPath, String destPath);
+    OssFileMetadataVO moveObject(String bucketName, String srcPath, String destBucketName, String destPath, boolean createParent);
 
-    OssFileMetadataVO copyFile(String sourceBucket, String sourcePath,
-                               String destBucket, String destPath,
-                               boolean overwrite);
+    OssFileMetadataVO copyObject(String bucketName, String srcPath, String destBucketName, String destPath, boolean createParent);
 
-    void initBucket(String bucketName);
+    void initBucket(String bucketName, EditorUser currentUser);
 
     OssFileMetadataVO rename(String bucketName, String oldPath, String newName);
 

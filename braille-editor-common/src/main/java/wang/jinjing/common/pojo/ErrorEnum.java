@@ -50,12 +50,13 @@ public enum ErrorEnum {
 
     FILE_METADATA_NOT_FOUND("文件信息未找到",HttpStatus.NOT_FOUND),
     FILE_MOVE_FAIL("文件移动失败",HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_MOVE_NO_OPERATION("无需移动文件",HttpStatus.NO_CONTENT ),
 
     RECYCLE_RECORD_NOT_FOUND("回收站记录未被找到",HttpStatus.NOT_FOUND),
     ORIGIN_PATH_OCCUPIED("原来的路径被占用了",HttpStatus.CONFLICT),
     FILE_UPDATE_FAILED("文件更新失败",HttpStatus.INTERNAL_SERVER_ERROR),
-    FILE_COPY_FAIL("文件更新失败",HttpStatus.INTERNAL_SERVER_ERROR),
-    SUB_COPY_FAIL("子项移动更新失败",HttpStatus.INTERNAL_SERVER_ERROR),
+    FILE_COPY_FAIL("文件复制失败",HttpStatus.INTERNAL_SERVER_ERROR),
+
     USERNAME_OR_PASSWORD_ERROR("用户名或密码错误", HttpStatus.UNAUTHORIZED),
     USER_BUCKET_ALREADY_INIT("用户存储桶已经初始化",HttpStatus.NO_CONTENT ),
     USER_BUCKET_CREATE_FAIL("用户存储桶创建失败",HttpStatus.INTERNAL_SERVER_ERROR),
@@ -72,6 +73,7 @@ public enum ErrorEnum {
     FILE_CONTENT_NOT_FOUND("文件内容已丢失", HttpStatus.INTERNAL_SERVER_ERROR ),
     RENAME_ROOT_NOT_ALLOWED("不允许重命名根目录",HttpStatus.NOT_ACCEPTABLE ),
     DEST_FILE_TYPE_CONFLICT("目标路径已存在同名不同类型（目录、文件）文件无法覆盖", HttpStatus.CONFLICT ),
+
     ;
 
     private final String message;

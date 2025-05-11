@@ -37,4 +37,8 @@ public interface AuthService {
      */
     int resetPassword(String username, String newPassword, String emailCode);
 
+    /**
+     * 注册用户
+    */
+    EditorUserVO registerUser(String username, String email, String password);
 }

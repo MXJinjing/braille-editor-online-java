@@ -7,8 +7,9 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <processorPath>
-          <entry name="$PROJECT_DIR$/../../mvnrepo/org/projectlombok/lombok/unknown/lombok-unknown.jar" />
+        <processorPath useClasspath="false">
+          <entry name="$PROJECT_DIR$/../../mvnrepo/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
+          <entry name="$PROJECT_DIR$/../../mvnrepo/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar" />
         </processorPath>
         <module name="braille-editor-common" />
         <module name="braille-editor-core" />

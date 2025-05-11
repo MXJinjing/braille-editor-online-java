@@ -17,8 +17,6 @@ import java.util.Date;
 @NoArgsConstructor
 public class OssFileMetadataVO extends BaseVO {
 
-    private Long id;
-
     private String realFileName;
 
     private String path;
