@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.pojo.VO.OssRecycleMetadataVO;
 import wang.jinjing.editor.service.file.UserFileService;
 
@@ -18,7 +19,7 @@ public class UserRecycleController {
     @Autowired
     private UserFileService userFileService;
 
-    @GetMapping("/list")
+    @GetMapping("")
     public ResponseEntity<?> listRecycleFiles(
             @RequestParam(required = false) String sorts
     ){
@@ -34,4 +35,18 @@ public class UserRecycleController {
         List<OssRecycleMetadataVO> ossRecycleMetadataVOS = userFileService.listRecycleFiles(sort);
         return ResponseEntity.ok().body(ossRecycleMetadataVOS);
     }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<?> recoveryRecycleFile(@PathVariable Long id) {
+        OssFileMetadataVO ossFileMetadataVO = userFileService.recoveryRecycleFile(id);
+        return ResponseEntity.ok().body(ossFileMetadataVO);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteRecycleFile(@PathVariable Long id) {
+        userFileService.deleteRecycleFile(id);
+        return ResponseEntity.ok().build();
+    }
+
+
 }

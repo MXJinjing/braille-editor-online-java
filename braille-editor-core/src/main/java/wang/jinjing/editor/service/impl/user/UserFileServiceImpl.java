@@ -13,7 +13,6 @@ import wang.jinjing.editor.service.AbstractUserService;
 import wang.jinjing.editor.service.file.BaseFileService;
 import wang.jinjing.editor.service.file.UserFileService;
 import wang.jinjing.editor.service.oss.S3BucketService;
-import wang.jinjing.editor.util.SecurityUtils;
 
 import java.io.InputStream;
 import java.util.Date;
@@ -77,46 +76,44 @@ public class UserFileServiceImpl extends AbstractUserService implements UserFile
 
     @Override
     public void deleteFiles(String path) {
-        baseFileService.deleteFiles(getBucketName(), path);
+        baseFileService.softDeleteFile(getBucketName(), path);
     }
 
     @Override
-    public void recoveryFromTrash(Long deleteId) {
-        baseFileService.recoveryFromTrash(getBucketName(), deleteId);
+    public OssFileMetadataVO recoveryRecycleFile(Long deleteId) {
+        return baseFileService.recoveryRecycleFile(getBucketName(), deleteId);
     }
 
     @Override
-    public void realDeleteFiles(Long deleteId) {
-        baseFileService.realDeleteFiles(getBucketName(), deleteId);
+    public void deleteRecycleFile(Long deleteId) {
+        baseFileService.deleteRecycleFile(getBucketName(), deleteId);
     }
 
     @Override
-    public void mkDir(String folderPath, String folderName) {
-        baseFileService.mkDir(getBucketName(),folderPath, folderName,getCurrentUser().getId());
+    public void createFolder(String folderPath, String folderName) {
+        baseFileService.createFolder(getBucketName(),folderPath, folderName);
     }
 
     @Override
-    public void mkDirsWithParent(String pathWithFolderName) {
-        baseFileService.mkDirsWithParent(getBucketName(),pathWithFolderName,getCurrentUser().getId());
+    public void createFolderRecursive(String pathWithFolderName) {
+        baseFileService.createFolderRecursive(getBucketName(),pathWithFolderName);
     }
 
     @Override
     public void initBucket() {
-        baseFileService.initBucket(getBucketName(), SecurityUtils.getCurrentUser());
+        baseFileService.initBucket(getBucketName(), getCurrentUser());
     }
 
     @Override
-    public OssFileMetadataVO moveObject(String srcPath, String destPath, boolean createParent) {
-        String bucketName = getBucketName();
-        return baseFileService.moveObject(bucketName, srcPath, bucketName, destPath, createParent );
+    public OssFileMetadataVO moveObjectRename(String srcPath, String destPath) {
+        return baseFileService.moveFile(getBucketName(),srcPath,destPath);
     }
 
     @Override
-    public OssFileMetadataVO copyObject(String srcPath, String destPath, boolean createParent) {
+    public OssFileMetadataVO copyObject(String sourcePath, String destPath, boolean overwrite){
         String bucketName = getBucketName();
-        return baseFileService.copyObject(bucketName, srcPath, bucketName, destPath, createParent);
+        return baseFileService.copyFile(bucketName, sourcePath, bucketName, destPath, overwrite);
     }
-
 
     @Override
     public List<OssRecycleMetadataVO> listRecycleFiles(Sort sort) {
@@ -148,4 +145,5 @@ public class UserFileServiceImpl extends AbstractUserService implements UserFile
     public String generateLink(String filePath) {
         return baseFileService.generateLink(getBucketName(),filePath);
     }
+
 }

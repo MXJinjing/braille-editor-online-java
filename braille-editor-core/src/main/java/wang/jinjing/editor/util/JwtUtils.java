@@ -42,7 +42,7 @@ public class JwtUtils {
     public  String generateJwtToken(Authentication authentication) {
         EditorUser userPrincipal = (EditorUser) authentication.getPrincipal();
         Collection<? extends GrantedAuthority> authorities = userPrincipal.getAuthorities();
-        JwtSubject jwtSubject = new JwtSubject(userPrincipal.getUsername(),userPrincipal.getAuthorities());
+        JwtSubject jwtSubject = new JwtSubject(userPrincipal.getUsername(), userPrincipal.getAuthorities());
         String jsonStr = JSONUtil.toJsonStr(jwtSubject);
 
         return Jwts.builder()

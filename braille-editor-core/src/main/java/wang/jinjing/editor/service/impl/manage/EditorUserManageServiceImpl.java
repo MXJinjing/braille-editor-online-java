@@ -14,12 +14,14 @@ import wang.jinjing.common.util.BeanConvertUtil;
 import wang.jinjing.editor.pojo.VO.EditorUserVO;
 import wang.jinjing.editor.pojo.entity.EditorUser;
 import wang.jinjing.common.pojo.ErrorEnum;
+import wang.jinjing.editor.pojo.enums.PasswordFormatEnum;
 import wang.jinjing.editor.pojo.enums.SysRoleEnum;
 import wang.jinjing.editor.repository.EditorUserRepository;
 import wang.jinjing.common.service.AbstractCRUDService;
 import wang.jinjing.editor.service.file.BaseFileService;
 import wang.jinjing.editor.service.manage.EditorUserManageService;
 import wang.jinjing.editor.service.oss.S3BucketService;
+import wang.jinjing.editor.util.PasswordFormatChecker;
 import wang.jinjing.editor.util.SecurityUtils;
 
 import java.util.*;
@@ -452,17 +454,25 @@ public class EditorUserManageServiceImpl
      * @return
      */
     @Override
-    public int changePasswordNotCheck(Long userId, String newPassword) {
-//        PasswordFormatEnum passwordFormatEnum = PasswordFormatChecker.checkPasswordFormat(newPassword);
-//        if(passwordFormatEnum == PasswordFormatEnum.TOO_SHORT) {
-//            throw new ServiceException(ErrorEnum.PASSWORD_TOO_SHORT);
-//        } else if(passwordFormatEnum == PasswordFormatEnum.TOO_LONG) {
-//            throw new ServiceException(ErrorEnum.PASSWORD_TOO_LONG);
-//        } else if(passwordFormatEnum == PasswordFormatEnum.TOO_WEAL) {
-//            throw new ServiceException(ErrorEnum.PASSWORD_TOO_WEAK);
-//        } else if(passwordFormatEnum == PasswordFormatEnum.NOT_SUPPORTED) {
-//            throw new ServiceException(ErrorEnum.PASSWORD_NOT_SUPPORTED);
-//        }
+    public int changePassword(Long userId, String newPassword, boolean check) {
+        if(check) {
+            PasswordFormatEnum passwordFormatEnum = PasswordFormatChecker.checkPasswordFormat(newPassword);
+            if (passwordFormatEnum == PasswordFormatEnum.TOO_SHORT) {
+                throw new ServiceException(ErrorEnum.PASSWORD_TOO_SHORT);
+            } else if (passwordFormatEnum == PasswordFormatEnum.TOO_LONG) {
+                throw new ServiceException(ErrorEnum.PASSWORD_TOO_LONG);
+            } else if (passwordFormatEnum == PasswordFormatEnum.TOO_WEAL) {
+                throw new ServiceException(ErrorEnum.PASSWORD_TOO_WEAK);
+            } else if (passwordFormatEnum == PasswordFormatEnum.NOT_SUPPORTED) {
+                throw new ServiceException(ErrorEnum.PASSWORD_NOT_SUPPORTED);
+            }
+        }else{
+            if(newPassword.length() < 8){
+                throw new ServiceException(ErrorEnum.PASSWORD_TOO_SHORT);
+            } else if(newPassword.length() > 20){
+                throw new ServiceException(ErrorEnum.PASSWORD_TOO_LONG);
+            }
+        }
         String encode = passwordEncoder.encode(newPassword);
         if(repository.updateSingle(userId, "password", encode) > 0) {
             return 1;

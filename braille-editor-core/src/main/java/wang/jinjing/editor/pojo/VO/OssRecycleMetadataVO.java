@@ -47,4 +47,6 @@ public class OssRecycleMetadataVO extends BaseVO {
 
     private Date deleteAt;
 
+    private Long deleteId;
+
 }

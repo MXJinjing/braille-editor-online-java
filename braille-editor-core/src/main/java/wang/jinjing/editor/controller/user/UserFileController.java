@@ -152,23 +152,22 @@ public class UserFileController {
     public ResponseEntity<?> copyObject(
             @RequestParam("src") String srcPath,
             @RequestParam("dest") String destPath,
-            @RequestParam(value = "r", defaultValue = "false",required = false) Boolean createParent) {
-        OssFileMetadataVO ossFileMetadataVO = userFileService.copyObject(srcPath, destPath, createParent);
+            @RequestParam(defaultValue = "false",required = false) Boolean overwrite) {
+        OssFileMetadataVO ossFileMetadataVO = userFileService.copyObject(srcPath, destPath, overwrite);
         return ResponseEntity.ok().body(ossFileMetadataVO);
     }
 
     @PutMapping("/move")
     public ResponseEntity<?> moveObjectRename(
             @RequestParam("src") String srcPath,
-            @RequestParam("dest") String destPath,
-            @RequestParam(required = false, value = "r", defaultValue = "false") Boolean createParent) {
-        OssFileMetadataVO ossFileMetadataVO = userFileService.moveObject(srcPath, destPath, createParent);
+            @RequestParam("dest") String destPath) {
+        OssFileMetadataVO ossFileMetadataVO = userFileService.moveObjectRename(srcPath, destPath);
         return ResponseEntity.ok().body(ossFileMetadataVO);
     }
 
     @PostMapping("/mkdirs")
     public ResponseEntity<?> mkDirsWithParent(@RequestParam String pathWithFolderName) {
-        userFileService.mkDirsWithParent(pathWithFolderName);
+        userFileService.createFolderRecursive(pathWithFolderName);
         return ResponseEntity.ok().build();
     }
 
@@ -178,23 +177,12 @@ public class UserFileController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping("/recoveryFromTrash")
-    public ResponseEntity<?> recoveryFromTrash(@RequestParam Long deleteId) {
-        userFileService.recoveryFromTrash(deleteId);
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/realDelete")
-    public ResponseEntity<?> realDeleteFiles(@RequestParam Long deleteId) {
-        userFileService.realDeleteFiles(deleteId);
-        return ResponseEntity.ok().build();
-    }
 
     @PostMapping("/mkdir")
     public ResponseEntity<?> mkDir(
             @RequestParam("path") String folderPath,
             @RequestParam("name") String folderName) {
-        userFileService.mkDir(folderPath, folderName);
+        userFileService.createFolder(folderPath, folderName);
         return ResponseEntity.ok().build();
     }
 

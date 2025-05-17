@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.multipart.MultipartFile;
 import wang.jinjing.common.pojo.FileTypeEnum;
-import wang.jinjing.editor.pojo.DTO.OssFileMetadataSearchDTO;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.pojo.VO.OssRecycleMetadataVO;
 
@@ -16,7 +15,7 @@ public interface UserFileService {
 
     // filePath: end without '/'
     // folderPath: end with '/'
-    // user-bucket: "user-" + currentUser.getId()
+    // user-bucket: "user-" + currentUser.getUUID()
 
     OssFileMetadataVO uploadFile(String path, MultipartFile file);
 
@@ -36,23 +35,24 @@ public interface UserFileService {
 
     void deleteFiles(String path);
 
-    void recoveryFromTrash(Long deleteId);
+    OssFileMetadataVO recoveryRecycleFile(Long deleteId);
 
-    void realDeleteFiles(Long deleteId);
+    void deleteRecycleFile(Long deleteId);
 
-    void mkDir(String folderPath, String folderName);
+    void createFolder(String folderPath, String folderName);
 
-    void mkDirsWithParent(String pathWithFolderName);
+    void createFolderRecursive(String pathWithFolderName);
 
     void initBucket();
 
-    OssFileMetadataVO moveObject(String srcPath, String destPath, boolean createParent);
+    OssFileMetadataVO moveObjectRename(String srcPath, String destPath);
 
-    OssFileMetadataVO copyObject(String sourcePath, String destPath, boolean createParent);
+    OssFileMetadataVO copyObject(String sourcePath, String destPath, boolean overwrite);
 
     List<OssRecycleMetadataVO> listRecycleFiles(Sort sort);
 
     Page<OssFileMetadataVO> search(String realFileName, String path, Boolean isDir, Date createAtStart, Date createAtEnd , Date lastModifiedAtStart, Date lastModifiedAtEnd, String mimeType, Integer page, Integer size, Sort sort);
 
     String generateLink(String filePath);
+
 }

@@ -16,7 +16,6 @@ import wang.jinjing.editor.pojo.DTO.FileUploadBytesDTO;
 import wang.jinjing.editor.pojo.VO.FileBytesDownloadVO;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
 import wang.jinjing.editor.service.file.BaseFileService;
-import wang.jinjing.editor.util.SecurityUtils;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -127,35 +126,35 @@ public class OssFileManageController {
     @PutMapping("/delete")
     public ResponseEntity<?> moveToTrash(@RequestParam("bucket") String bucketName,
                                          @RequestParam String path){
-        baseFileService.deleteFiles(bucketName, path);
+        baseFileService.softDeleteFile(bucketName, path);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/recoveryFromTrash")
     public ResponseEntity<?> recoveryFromTrash(@RequestParam("bucket") String bucketName,
                                                @RequestParam(value = "deleteId") Long deleteId){
-        baseFileService.recoveryFromTrash(bucketName, deleteId);
+        baseFileService.recoveryRecycleFile(bucketName, deleteId);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/realDelete")
     public ResponseEntity<?> realDelete(@RequestParam("bucket") String bucketName,
                                         @RequestParam(value = "deleteId") Long deleteId){
-        baseFileService.realDeleteFiles(bucketName, deleteId);
+        baseFileService.deleteRecycleFile(bucketName, deleteId);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/mkdir")
-    public ResponseEntity<?> mkDir(@RequestParam("bucket") String bucketName,
+    public ResponseEntity<?> createFolder(@RequestParam("bucket") String bucketName,
                                     @RequestParam String folderPath,
                                    @RequestParam String folderName){
-        return ResponseEntity.ok(baseFileService.mkDir(bucketName, folderPath, folderName,SecurityUtils.getCurrentUser().getId()));
+        return ResponseEntity.ok(baseFileService.createFolder(bucketName, folderPath, folderName));
     }
 
     @PostMapping("/mkdirs")
-    public ResponseEntity<?> mkDirsWithParent(@RequestParam("bucket") String bucketName,
+    public ResponseEntity<?> createFolderRecursive(@RequestParam("bucket") String bucketName,
                                                @RequestParam String pathWithFolderName){
-        return ResponseEntity.ok(baseFileService.mkDirsWithParent(bucketName, pathWithFolderName,SecurityUtils.getCurrentUser().getId()));
+        return ResponseEntity.ok(baseFileService.createFolderRecursive(bucketName, pathWithFolderName));
     }
 
     @PutMapping("/copy")
@@ -163,9 +162,9 @@ public class OssFileManageController {
                                         @RequestParam String sourcePath,
                                         @RequestParam String destBucket,
                                         @RequestParam String destPath,
-                                        @RequestParam(value = "r", defaultValue = "false", required = false) Boolean createParent){
-        OssFileMetadataVO ossFileMetadataVO = baseFileService.copyObject(bucketName, sourcePath, destBucket, destPath, createParent);
-        return ResponseEntity.ok(ossFileMetadataVO);
+                                        @RequestParam(value = "overwrite", defaultValue = "false", required = false) Boolean overwrite){
+        baseFileService.copyFile(bucketName, sourcePath, destBucket, destPath, overwrite);
+        return ResponseEntity.ok().build();
     }
 
 

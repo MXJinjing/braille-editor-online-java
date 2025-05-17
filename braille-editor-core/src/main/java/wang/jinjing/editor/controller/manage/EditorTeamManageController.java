@@ -17,14 +17,14 @@ import wang.jinjing.editor.service.manage.EditorTeamManageService;
 
 @RestController
 @RequestMapping("/api/manage/team")
-public class EditorTeamManageControllerAbstract extends AbstractRestfulAPIsController<
+public class EditorTeamManageController extends AbstractRestfulAPIsController<
         EditorTeamDTO,EditorTeam, EditorTeamVO, EditorTeamRepository, BasicCRUDService<EditorTeam,EditorTeamVO>> {
 
     @Autowired
     private EditorTeamManageService editorTeamManagerService;
 
     @Autowired
-    public EditorTeamManageControllerAbstract(
+    public EditorTeamManageController(
             BasicCRUDService<EditorTeam, EditorTeamVO> crudService) {
         super(crudService);
     }

@@ -1,7 +1,6 @@
 package wang.jinjing.editor.controller.manage;
 
 
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +19,13 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/manage/user")
-public class EditorUserManageControllerAbstract extends AbstractRestfulAPIsController<
+public class EditorUserManageController extends AbstractRestfulAPIsController<
         EditorUserDTO,EditorUser, EditorUserVO, EditorUserRepository, BasicCRUDService<EditorUser,EditorUserVO>> {
 
     @Autowired
     private EditorUserManageService editorUserManageService;
 
-    public EditorUserManageControllerAbstract(BasicCRUDService<EditorUser,EditorUserVO> crudService) {
+    public EditorUserManageController(BasicCRUDService<EditorUser,EditorUserVO> crudService) {
         super(crudService);
         setClasses(EditorUser.class, EditorUserVO.class);
     }
@@ -64,20 +63,20 @@ public class EditorUserManageControllerAbstract extends AbstractRestfulAPIsContr
         }
     }
 
-    @PatchMapping("/{id}/changeStorageQuota")
-    ResponseEntity<?> changeStorageQuota(@Valid @PathVariable Long id, @RequestParam Long storageQuota) {
+    @PatchMapping("/changeStorageQuota")
+    ResponseEntity<?> changeStorageQuota(@RequestParam Long id, @RequestParam Long storageQuota) {
         int i = editorUserManageService.changeStorageQuota(id, storageQuota);
         return (i > 0)? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Unknown error");
     }
 
-    @PatchMapping("/{id}/changePassword")
-    ResponseEntity<?> changePasswordNotCheck(@Valid @PathVariable Long id, @RequestParam String password) {
-        int i = editorUserManageService.changePasswordNotCheck(id, password);
+    @PatchMapping("/changePassword")
+    ResponseEntity<?> changePasswordNotCheck(@RequestParam Long id, @RequestParam String password) {
+        int i = editorUserManageService.changePassword(id, password,false);
         return (i > 0)? ResponseEntity.ok().build() : ResponseEntity.badRequest().body("Unknown error");
     }
 
-    @PatchMapping("/{id}/initBucket")
-    ResponseEntity<?> initBucket(@Valid @PathVariable Long id) {
+    @PatchMapping("/initBucket")
+    ResponseEntity<?> initBucket(@RequestParam Long id) {
        editorUserManageService.initBucket(id);
         return ResponseEntity.ok().build();
     }

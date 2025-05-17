@@ -13,7 +13,11 @@ public interface OssFileMetadataRepository extends BaseRepository<OssFileMetadat
 
     OssFileMetadata selectByPath(String bucket, String path, FileTypeEnum fileType);
 
+    OssFileMetadata selectDeletedByPathAndDeleteId(String bucket, String path, FileTypeEnum fileType, Long deleteId);
+
     List<OssFileMetadata> listSoftDeleteItems(String bucketName, Sort sort);
+
+    void setDeleteFlagByPath(String bucketName, String path, Date deleteAt, Long deleteBy, Integer deletedType);
 
     Page<OssFileMetadata> searchPage(
             String s3Bucket,
@@ -44,10 +48,10 @@ public interface OssFileMetadataRepository extends BaseRepository<OssFileMetadat
 
     List<OssFileMetadata> listByPath(String bucketName, String path, Sort sort);
 
-    int realDeleteByPath(String destBucket, String destPath);
+    List<OssFileMetadata> listDeletedByPath(String bucketName, String path, Sort sort);
+
+    void realDeleteByPath(String destBucket, String destPath, Long deleteId);
 
     List<OssFileMetadata> listRecursiveByPath(String bucketName, String srcPath);
-
-    void setDeleteFlagByPath(String bucketName, String path, Date deleteAt, Long deleteBy);
 
 }

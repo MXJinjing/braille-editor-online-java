@@ -14,7 +14,7 @@ public interface EditorUserManageService{
 
     int changeStorageQuota(Long userId, Long storageQuota);
 
-    int changePasswordNotCheck(Long userId, String newPassword);
+    int changePassword(Long userId, String newPassword, boolean check);
 
     void initBucket(@Valid Long id);
 }

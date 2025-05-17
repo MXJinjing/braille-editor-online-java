@@ -30,21 +30,36 @@ public class OssFileMetadataRepositoryImpl extends
     }
 
     @Override
+    public OssFileMetadata selectDeletedByPathAndDeleteId(String bucket, String path, FileTypeEnum fileType, Long deleteId) {
+        QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
+        wrapper.eq("s3_bucket", bucket)
+                .eq("path", path)
+                .ne("is_deleted",0)
+                .eq("delete_id", deleteId);
+        if(FileTypeEnum.FILE.equals(fileType)){
+            wrapper.eq("is_dir", false);
+        }else if (FileTypeEnum.FOLDER.equals(fileType)){
+            wrapper.eq("is_dir", true);
+        }
+        return mapper.selectOne(wrapper);
+    }
+
+    @Override
     public List<OssFileMetadata> listSoftDeleteItems(String bucketName, Sort sort) {
         QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
         wrapper.eq("s3_bucket", bucketName)
-                .eq("is_deleted",true);
+                .eq("is_deleted",1);
         addSortToWrapper(wrapper, sort);
         return mapper.selectList(wrapper);
     }
 
     @Override
-    public void setDeleteFlagByPath(String bucketName, String path, Date deleteAt, Long deleteBy) {
+    public void setDeleteFlagByPath(String bucketName, String path, Date deleteAt, Long deleteBy, Integer deletedType) {
         UpdateWrapper<OssFileMetadata> wrapper = new UpdateWrapper<>();
         wrapper.eq("s3_bucket", bucketName)
                 .eq("path", path)
-                .eq("is_deleted", false)
-                .set("is_deleted", true)
+                .eq("is_deleted", 0)
+                .set("is_deleted", deletedType)
                 .set("delete_at", deleteAt)
                 .set("deleted_by",deleteBy);
         mapper.update(wrapper);
@@ -69,7 +84,7 @@ public class OssFileMetadataRepositoryImpl extends
         QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
 
         wrapper.ne("real_file_name","");
-        wrapper.eq("is_deleted",false);
+        wrapper.eq("is_deleted",0);
 
         if (s3Bucket != null) {
             wrapper.eq("s3_bucket", s3Bucket);
@@ -115,7 +130,7 @@ public class OssFileMetadataRepositoryImpl extends
     public Page<OssFileMetadata> listSoftDeleteItemsPaged(String bucketName, Page<OssFileMetadata> page, Sort sort) {
         QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
         wrapper.eq("s3_bucket", bucketName)
-                .eq("is_deleted", true);
+                .eq("is_deleted", 1);
         addSortToWrapper(wrapper, sort);
         return mapper.selectPage(page, wrapper);
     }
@@ -125,7 +140,7 @@ public class OssFileMetadataRepositoryImpl extends
         QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
         wrapper.eq("s3_bucket", bucketName)
                 .eq("s3_key", s3Key)
-                .eq("is_deleted", false);
+                .eq("is_deleted", 0);
         return mapper.exists(wrapper);
     }
 
@@ -139,7 +154,7 @@ public class OssFileMetadataRepositoryImpl extends
         QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
         wrapper.eq("s3_bucket", bucket)
                 .eq("path", newPath)
-                .eq("is_deleted", false);
+                .eq("is_deleted", 0);
         if(FileTypeEnum.FILE.equals(fileType)){
             wrapper.eq("is_dir", false);
         }else if (FileTypeEnum.FOLDER.equals(fileType)){
@@ -168,7 +183,7 @@ public class OssFileMetadataRepositoryImpl extends
         MPJQueryWrapper<OssFileMetadata> wrapper = new MPJQueryWrapper<>();
         wrapper.eq("s3_bucket", bucketName)
                 .eq("parent_path", path)
-                .eq("is_deleted", false);
+                .eq("is_deleted", 0);
                 ;
         addSortToWrapper(wrapper, sort);
         return mapper.selectPage(page, wrapper);
@@ -179,19 +194,29 @@ public class OssFileMetadataRepositoryImpl extends
         QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
         wrapper.eq("s3_bucket", bucketName)
                 .eq("parent_path", path)
-                .eq("is_deleted", false);
+                .eq("is_deleted", 0);
         addSortToWrapper(wrapper,sort);
         return mapper.selectList(wrapper);
     }
 
     @Override
-    public int realDeleteByPath(String bucket, String path) {
-        MPJQueryWrapper<OssFileMetadata>  wrapper = new MPJQueryWrapper<>();
+    public List<OssFileMetadata> listDeletedByPath(String bucketName, String path, Sort sort) {
+        QueryWrapper<OssFileMetadata> wrapper = new QueryWrapper<>();
+        wrapper.eq("s3_bucket", bucketName)
+                .eq("parent_path", path)
+                .ne("is_deleted", 0);
+        addSortToWrapper(wrapper,sort);
+        return mapper.selectList(wrapper);
+    }
+
+    @Override
+    public void realDeleteByPath(String bucket, String path, Long deleteId) {
+        QueryWrapper<OssFileMetadata>  wrapper = new QueryWrapper<>();
         wrapper.eq("s3_bucket", bucket)
                 .eq("path", path)
-                .eq("is_deleted", true);
+                .eq("delete_id", deleteId);
 
-        return mapper.deleteById(wrapper);
+        mapper.delete(wrapper);
     }
 
     @Override

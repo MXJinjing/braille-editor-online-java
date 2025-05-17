@@ -60,12 +60,15 @@ public class OssFileMetadata extends BaseEntity {
     private Boolean hidden;
 
     @TableField("is_deleted")
-    private Boolean isDeleted;
+    private Integer isDeleted;
 
     @TableField("deleted_by")
     private Long deletedBy;
 
     @TableField("delete_at")
     private Date deleteAt;
+
+    @TableField("delete_id")
+    private Long deleteId;
 
 }

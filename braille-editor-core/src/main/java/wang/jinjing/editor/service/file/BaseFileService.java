@@ -1,11 +1,9 @@
 package wang.jinjing.editor.service.file;
 
+import cn.hutool.core.lang.Editor;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import jakarta.validation.constraints.NotBlank;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.domain.Sort;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import wang.jinjing.common.pojo.FileTypeEnum;
 import wang.jinjing.editor.pojo.VO.OssFileMetadataVO;
@@ -47,21 +45,23 @@ public interface BaseFileService {
 
     Page<OssFileMetadataVO> listPagedFiles(@NotBlank String bucketName, @NotBlank String folderPath,int page, int size ,Sort sort);
 
-    void deleteFiles(String bucketName, String path );
+    void softDeleteFile(String bucketName, String path);
 
-    void recoveryFromTrash(String bucketName, Long recycleId);
+    OssFileMetadataVO recoveryRecycleFile(String bucketName, Long recycleId);
 
-    void realDeleteFiles(String bucketName, Long deleteId);
+    void deleteRecycleFile(String bucketName, Long deleteId);
 
-    long mkDirsWithParent(String bucketName, String pathWithFolderName, Long currentUserId);
+    OssFileMetadataVO createFolder(String bucketName, String folderPath, String folderName);
 
-    long mkDir(String bucketName, String folderPath, String folderName, Long currentUserId);
+    OssFileMetadataVO createFolderRecursive(String bucketName, String pathWithFolderName);
 
-    OssFileMetadataVO moveObject(String bucketName, String srcPath, String destBucketName, String destPath, boolean createParent);
+    OssFileMetadataVO moveFile(String bucketName, String srcPath, String destPath);
 
-    OssFileMetadataVO copyObject(String bucketName, String srcPath, String destBucketName, String destPath, boolean createParent);
+    OssFileMetadataVO copyFile(String sourceBucket, String sourcePath,
+                               String destBucket, String destPath,
+                               boolean overwrite);
 
-    void initBucket(String bucketName, EditorUser currentUser);
+    void initBucket(String bucketName, EditorUser user);
 
     OssFileMetadataVO rename(String bucketName, String oldPath, String newName);
 
